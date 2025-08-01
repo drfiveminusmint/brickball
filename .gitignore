@@ -5,8 +5,8 @@
 build
 
 # Ignore IDE files
-.idea/
-.vscode/
+.idea
+.vscode
 
 # Ignore classes
 *.class
