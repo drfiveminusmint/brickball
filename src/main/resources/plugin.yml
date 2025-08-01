@@ -1,0 +1,15 @@
+name: Brickball
+version: '${version}'
+main: com.github.drfiveminusmint.brickball.Brickball
+author: drfiveminusminus
+depend:
+  - WorldEdit
+  - WorldGuard
+api-version: '1.21'
+commands:
+  brickballtest:
+    description: brick.
+    usage: /brickballtest (create/test) (id)
+  brickball:
+    description: brick.
+    usage: /brickball (create/join/leave/jointeam/map)
