@@ -31,10 +31,3 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-core:7.3.3")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.3")
 }
-
-/*tasks.processResources {
-    from(rootProject.file("LICENSE.md"))
-    filesMatching("*.yml") {
-        expand(mapOf("projectVersion" to project.version))
-    }
-}*/
