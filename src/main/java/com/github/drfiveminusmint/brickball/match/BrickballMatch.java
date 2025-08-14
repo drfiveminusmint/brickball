@@ -4,23 +4,25 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.BrickballArena;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
-import com.sk89q.worldedit.world.World;
 import io.papermc.paper.entity.LookAnchor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.*;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.ArmorMeta;
+import org.bukkit.inventory.meta.CrossbowMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -29,28 +31,29 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 public class BrickballMatch implements ForwardingAudience {
-    private int matchID = 0;
+    private final int matchID;
     private Scoreboard scoreboard;
     private Objective objective;
-    private Team[] teams = new Team[3];
-    private BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
-    private String[] teamNames = {"Team 1", "Team 2", "Spectators"};
-    private HashSet<Player> players = new HashSet();
-    private BrickballArena arena;
+    private final Team[] teams = new Team[3];
+    private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
+    private final String[] teamNames = {"Team 1", "Team 2", "Spectators"};
+    private final HashSet<Player> players = new HashSet<>();
+    private final BrickballArena arena;
+    private final MatchSettings settings;
+
+    private static final Set<EntityType> CLEARING_ENTITIES = Set.of(EntityType.ITEM, EntityType.ARROW);
 
     private boolean running, paused;
-
-    public BrickballMatch(ArenaTemplate template, World gameWorld) {
-        arena = new BrickballArena(template, gameWorld);
-    }
 
     public BrickballMatch(ArenaTemplate template, Location minPoint, int matchID) {
         this.matchID = matchID;
         arena = new BrickballArena(template, minPoint, matchID);
+        settings = new MatchSettings();
     }
 
     public void initialize() {
@@ -60,6 +63,7 @@ public class BrickballMatch implements ForwardingAudience {
             teams[i] = scoreboard.registerNewTeam(teamNames[i]);
             teams[i].color(teamColors[i].textColor);
             teams[i].addEntry(teamNames[i]);
+            teams[i].setAllowFriendlyFire(false);
             objective.getScore(teamNames[i]).setScore(0);
         }
         teams[2] = scoreboard.registerNewTeam(teamNames[2]);
@@ -87,12 +91,22 @@ public class BrickballMatch implements ForwardingAudience {
                 for (ItemStack armorPiece : inventory.getArmorContents()) {
                     armorPiece.setItemMeta(meta);
                 }
-                inventory.addItem(new ItemStack(Material.IRON_SWORD));
+                ItemStack sword = new ItemStack(Material.IRON_SWORD);
+                ItemMeta swordMeta = sword.getItemMeta();
+                swordMeta.setUnbreakable(true);
+                sword.setItemMeta(swordMeta);
+                inventory.addItem(sword);
                 inventory.addItem(new ItemStack(Material.CROSSBOW));
                 inventory.addItem(new ItemStack(Material.COOKED_BEEF, 8));
-                inventory.addItem(new ItemStack(Material.ARROW, 10));
                 player.updateInventory();
             }
+        //Setup spectators
+        for (String string : teams[teams.length-1].getEntries()) {
+            Player player = Bukkit.getServer().getPlayer(string);
+            if (player == null) continue;
+            player.setGameMode(GameMode.SPECTATOR);
+            player.teleport(arena.getBrickSpawn());
+        }
         running = true;
         startRound();
         return true;
@@ -108,19 +122,58 @@ public class BrickballMatch implements ForwardingAudience {
                 // Turn the player to face the brick before we set their respawn location
                 player.lookAt(arena.getBrickSpawn(), LookAnchor.EYES);
                 player.setGameMode(GameMode.ADVENTURE);
+                if (settings.getBoolean(MatchSettings.Setting.NATURAL_REGENERATION)) {
+                    player.setUnsaturatedRegenRate(80);
+                    player.setSaturatedRegenRate(10);
+                } else {
+                    player.setUnsaturatedRegenRate(Integer.MAX_VALUE);
+                    player.setSaturatedRegenRate(Integer.MAX_VALUE);
+                }
                 player.heal(20);
                 player.setFoodLevel(20);
+                player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
+                player.setFireTicks(0);
+                player.getInventory().remove(Material.ARROW);
+                player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
+                for (ItemStack itemStack : player.getInventory()) {
+                    if (itemStack == null) continue;
+                    if (itemStack.getItemMeta() instanceof CrossbowMeta meta) {
+                        meta.setUnbreakable(true);
+                        meta.setChargedProjectiles(null);
+                        itemStack.setItemMeta(meta);
+                    }
+                }
+                //prevent item smuggling
+                ItemStack offhandItem = player.getInventory().getItemInOffHand();
+                if (offhandItem != null) {
+                    if (offhandItem.getItemMeta() instanceof CrossbowMeta meta) {
+                        meta.setChargedProjectiles(null);
+                        offhandItem.setItemMeta(meta);
+                    } else if (offhandItem.getType().equals(Material.ARROW)) {
+                        player.getInventory().setItemInOffHand(null);
+                    }
+                }
                 player.setRespawnLocation(player.getLocation(), true);
             }
-        Location brickSpawn = arena.getBrickSpawn();
-        Item brick = (Item) brickSpawn.getWorld().spawnEntity(brickSpawn, EntityType.ITEM);
-        brick.setItemStack(new ItemStack(Material.BRICK, 1));
-        // STAY THERE
-        brick.setVelocity(new Vector(0, 0, 0));
-        brick.setGlowing(true);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
+        for (Entity entity : arena.getBrickSpawn().getWorld().getEntities()) {
+            if (!CLEARING_ENTITIES.contains(entity.getType())) continue;
+            if (arena.checkLocationInbounds(entity.getLocation())) entity.remove();
+        }
+        spawnBrick();
+        // Start countdown
+        for (int i = 3; i > 0; i--) {
+            final int j = i;
+            new BukkitRunnable () {
+                public void run () {
+                    playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
+                    showTitle(Title.title(Component.text(String.valueOf(j)), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(400),Duration.ofMillis(200))));
+                }
+            }.runTaskLater(Brickball.getInstance(), 200 - 20L * j);
+        }
+        new BukkitRunnable () {
+            public void run () {
+                playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 2F));
+                showTitle(Title.title(Component.text("Round Start!"), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(200),Duration.ofMillis(200))));
                 arena.openDoors();
             }
         }.runTaskLater(Brickball.getInstance(), 200);
@@ -134,15 +187,40 @@ public class BrickballMatch implements ForwardingAudience {
                     player.getInventory().remove(Material.BRICK);
                     player.setGlowing(false);
                     player.removePotionEffect(PotionEffectType.WEAKNESS);
-                    playSound(Sound.sound(Key.key("block.glass.break"), Sound.Source.BLOCK, 10f, 5f));
-                    startRound();
+                    playSound(Sound.sound(Key.key("block.glass.break"), Sound.Source.BLOCK, 30f, 2f));
+                    if (objective.getScore(teamNames[i]).getScore() < settings.getInt(MatchSettings.Setting.POINTS_TO_WIN))
+                        startRound();
+                    else {
+                        sendMessage(Component.text("[Brickball] ").append(Component.text(teamNames[i])).append(Component.text(" has won the match!")));
+                        running = false;
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                shutdown();
+                            }
+                        }.runTaskLater(Brickball.getInstance(), 200);
+                    }
                 }
+    }
+
+    public void spawnBrick() {
+        Location brickSpawn = arena.getBrickSpawn();
+        Item brick = (Item) brickSpawn.getWorld().spawnEntity(brickSpawn, EntityType.ITEM);
+        brick.setItemStack(new ItemStack(Material.BRICK, 1));
+        // STAY THERE
+        brick.setVelocity(new Vector(0, 0, 0));
+        brick.setGlowing(true);
     }
 
     public boolean joinMatch(Player player) {
         teams[teams.length-1].addPlayer(player);
         players.add(player);
         player.setScoreboard(scoreboard);
+        // If it's already in progress, they need to be put into spectator mode.
+        if (running) {
+            player.setGameMode(GameMode.SPECTATOR);
+            player.teleport(arena.getBrickSpawn());
+        }
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" joined the match.")));
         return true;
     }
@@ -151,21 +229,18 @@ public class BrickballMatch implements ForwardingAudience {
         for (Team team : teams)
             team.removePlayer(player);
         // Don't take the brick with you when leaving
-        if (player.getInventory().contains(Material.BRICK)) {
-            Location brickSpawn = arena.getBrickSpawn();
-            Item brick = (Item) brickSpawn.getWorld().spawnEntity(brickSpawn, EntityType.ITEM);
-            brick.setItemStack(new ItemStack(Material.BRICK, 1));
-            // STAY THERE
-            brick.setVelocity(new Vector(0, 0, 0));
-            brick.setGlowing(true);
-        }
+        if (player.getInventory().contains(Material.BRICK))
+            spawnBrick();
         player.setGlowing(false);
+        player.setUnsaturatedRegenRate(80);
+        player.setSaturatedRegenRate(10);
         player.clearActivePotionEffects();
         player.getInventory().clear();
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
-        player.setRespawnLocation(player.getWorld().getSpawnLocation());
+        player.setRespawnLocation(player.getWorld().getSpawnLocation(), true);
         player.setGameMode(GameMode.SURVIVAL);
-        player.teleport(player.getRespawnLocation());
+        if (player.getRespawnLocation() != null)
+            player.teleport(player.getRespawnLocation());
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" left the match.")));
         return players.remove(player);
     }
@@ -173,6 +248,8 @@ public class BrickballMatch implements ForwardingAudience {
         if (!players.contains(player))
             if (!joinMatch(player)) return false;
         if (teamID >= teams.length) return false;
+        // No team switching once the game has started!
+        if (running) return false;
         // Remove the player from any current teams
         for(Team team : teams)
             team.removePlayer(player);
@@ -194,6 +271,7 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void shutdown () {
+        running = false;
         for (Team team : teams) {
             Set<String> entries = team.getEntries();
             team.removeEntries(entries);
@@ -204,9 +282,12 @@ public class BrickballMatch implements ForwardingAudience {
         for (Player player : players) {
             player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
             player.setGlowing(false);
+            player.setUnsaturatedRegenRate(80);
+            player.setSaturatedRegenRate(10);
             player.setGameMode(GameMode.SURVIVAL);
-            player.setRespawnLocation(player.getWorld().getSpawnLocation());
-            player.teleport(player.getRespawnLocation());
+            player.setRespawnLocation(player.getWorld().getSpawnLocation(), true);
+            if (player.getRespawnLocation() != null)
+                player.teleport(player.getRespawnLocation());
         }
         players.clear();
     }
@@ -225,5 +306,9 @@ public class BrickballMatch implements ForwardingAudience {
 
     public int getMatchID() {
         return matchID;
+    }
+
+    public MatchSettings getSettings() {
+        return settings;
     }
 }

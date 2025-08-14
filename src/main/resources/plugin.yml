@@ -1,15 +1,30 @@
 name: Brickball
-version: '${version}'
+version: 1.1.0-Alpha
 main: com.github.drfiveminusmint.brickball.Brickball
 author: drfiveminusminus
-depend:
-  - WorldEdit
-  - WorldGuard
+depend: [WorldEdit, WorldGuard]
 api-version: '1.21'
 commands:
   brickballtest:
     description: brick.
+    permission: brickball.debug
     usage: /brickballtest (create/test) (id)
   brickball:
     description: brick.
     usage: /brickball (create/join/leave/jointeam/map)
+permissions:
+  brickball.create:
+    description: Allows the user to create Brickball matches.
+    default: op
+  brickball.debug:
+    description: Allows the use of debug commands. Don't give this to players unless you know what you're doing.
+    default: op
+  brickball.join:
+    description: Allows the user to join other user's Brickball matches.
+    default: true
+  brickball.map.create:
+    description: Allows the user to save Brickball maps.
+    default: op
+  brickball.map.list:
+    description: Allows the user to list saved Brickball maps.
+    default: true

@@ -2,11 +2,12 @@ package com.github.drfiveminusmint.brickball.listener;
 
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
+import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
@@ -15,11 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.potion.PotionEffect;
@@ -47,24 +44,44 @@ public class PlayerListener implements Listener {
         //Override vanilla death functionality
         event.setCancelled(true);
         playerMatch.sendMessage(event.deathMessage());
-        if ((event.getDamageSource().getCausingEntity() instanceof  Player && player.getInventory().contains(Material.BRICK))) {
+        if ((player.getKiller() != null && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)))) {
+            // Transfer the brick to the killer if there is one
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
             player.getInventory().remove(Material.BRICK);
-            ((Player) event.getDamageSource().getCausingEntity()).getInventory().addItem(new ItemStack(Material.BRICK, 1));
-            event.getDamageSource().getCausingEntity().setGlowing(true);
-            ((Player) event.getDamageSource().getCausingEntity()).addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
-            playerMatch.sendMessage(((Player) event.getDamageSource().getCausingEntity()).displayName().append(Component.text(" has the brick!",NamedTextColor.WHITE)));
+            if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                player.getInventory().setItemInOffHand(null);
+            player.getKiller().getInventory().addItem(new ItemStack(Material.BRICK, 1));
+            player.getKiller().setGlowing(true);
+            player.getKiller().addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
+            playerMatch.sendMessage(player.getKiller().displayName().append(Component.text(" has the brick!",NamedTextColor.WHITE)));
+        } else if ((playerMatch.getSettings().getBoolean(MatchSettings.Setting.BRICK_FUMBLING) || !playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING))&& (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))) {
+            // Reset brick if fumbling is enabled or respawning is disabled
+            player.removePotionEffect(PotionEffectType.WEAKNESS);
+            player.setGlowing(false);
+            player.getInventory().remove(Material.BRICK);
+            if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                player.getInventory().setItemInOffHand(null);
+            playerMatch.spawnBrick();
         }
         if (player.getRespawnLocation() == null) Brickball.getInstance().getLogger().log(Level.SEVERE, "UH OH");
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                player.teleport(player.getRespawnLocation());
-                player.heal(20);
-                player.setFoodLevel(20);
-            }
-        }.runTask(Brickball.getInstance());
+        if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0)
+            player.setGameMode(GameMode.SPECTATOR);
+        if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    player.setGameMode(GameMode.ADVENTURE);
+                    player.teleport(player.getRespawnLocation());
+                    player.heal(20);
+                    player.setFoodLevel(20);
+                    player.setSaturation(playerMatch.getSettings().getInt(MatchSettings.Setting.SATURATION));
+                    player.setFireTicks(0);
+                }
+            }.runTaskLater(Brickball.getInstance(), playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
+        } else {
+            player.setGameMode(GameMode.SPECTATOR);
+        }
     }
 
     @EventHandler
@@ -121,6 +138,8 @@ public class PlayerListener implements Listener {
         if (!(event.getRightClicked() instanceof Player otherPlayer)) return;
         if (playerMatch.getPlayerTeam(player) == playerMatch.getPlayerTeam(otherPlayer)) {
             player.getInventory().remove(Material.BRICK);
+            if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                player.getInventory().setItemInOffHand(null);
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
             otherPlayer.getInventory().addItem(new ItemStack(Material.BRICK, 1));
@@ -128,5 +147,11 @@ public class PlayerListener implements Listener {
             otherPlayer.setGlowing(true);
             playerMatch.sendMessage(otherPlayer.displayName().append(Component.text(" has the brick!",NamedTextColor.WHITE)));
         }
+    }
+
+    //Ensure players leave all matches before they disconnect.
+    @EventHandler
+    public void onPlayerLogout (PlayerQuitEvent event) {
+        Brickball.getInstance().getMatchManager().leaveMatch(event.getPlayer());
     }
 }

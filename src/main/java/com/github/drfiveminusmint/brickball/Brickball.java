@@ -1,19 +1,15 @@
 package com.github.drfiveminusmint.brickball;
 
-import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.command.BrickballCommand;
 import com.github.drfiveminusmint.brickball.command.BrickballTestCommand;
 import com.github.drfiveminusmint.brickball.listener.PlayerListener;
 import com.github.drfiveminusmint.brickball.match.MatchManager;
-import org.bukkit.Bukkit;
+import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 public final class Brickball extends JavaPlugin {
@@ -36,12 +32,14 @@ public final class Brickball extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         // Plugin startup logic
         instance = this;
         templatesFolder = new File(this.getDataFolder().getAbsolutePath() + "/templates/");
         if (!templatesFolder.exists()) templatesFolder.mkdirs();
         this.templateManager = new TemplateManager();
         this.matchManager = new MatchManager();
+        MatchSettings.loadDefault(getConfig().getConfigurationSection("defaultSettings"));
         getCommand("brickballtest").setExecutor(new BrickballTestCommand());
         getCommand("brickball").setExecutor(new BrickballCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
@@ -65,6 +63,6 @@ public final class Brickball extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        matchManager.stopAllMatches();
     }
 }

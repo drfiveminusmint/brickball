@@ -2,7 +2,6 @@ package com.github.drfiveminusmint.brickball.arena;
 
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
@@ -19,10 +18,9 @@ import java.io.FileOutputStream;
 import java.util.logging.Level;
 
 public class ArenaTemplate {
-    private ProtectedRegion masterRegion, spawnA, doorA, spawnB, doorB;
-    private Location brickSpawn;
+    private final ProtectedRegion masterRegion, spawnA, doorA, spawnB, doorB;
+    private final Location brickSpawn;
     private final String ID;
-    private Clipboard schematic;
 
 
     public ArenaTemplate (String id, ProtectedRegion masterRegion, ProtectedRegion doorA, ProtectedRegion spawnA, ProtectedRegion doorB, ProtectedRegion spawnB, Location brickSpawn) {
@@ -44,6 +42,7 @@ public class ArenaTemplate {
                 manager.getRegion(id+"DoorB"),
                 manager.getRegion(id+"SpawnB"),
                 spawnLoc);
+        result.saveSchematic(world);
         return result;
     }
 
@@ -54,7 +53,7 @@ public class ArenaTemplate {
                 sourceWorld, schemRegion, clipboard, masterRegion.getMinimumPoint());
         try {
             Operations.complete(copy);
-            File schemFile = new File(Brickball.getTemplatesFolder().getAbsolutePath(), ID + ".schem");
+            File schemFile = new File(Brickball.getTemplatesFolder(), ID + ".schem");
             if (schemFile.exists()) schemFile.delete();
             ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getWriter(new FileOutputStream(schemFile));
             writer.write(clipboard);
@@ -64,9 +63,7 @@ public class ArenaTemplate {
             // If my programming professors could see me now, I don't know if they'd laugh or cry.
             Brickball.getInstance().getLogger().log(Level.SEVERE, "Error saving schematic!");
             e.printStackTrace();
-            return;
         }
-        schematic = clipboard;
     }
 
     public String getID() {

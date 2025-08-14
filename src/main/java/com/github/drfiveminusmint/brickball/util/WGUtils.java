@@ -3,31 +3,22 @@ package com.github.drfiveminusmint.brickball.util;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.world.block.BaseBlock;
+import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionType;
-import org.bukkit.Location;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class WGUtils {
-    public static ProtectedRegion cloneRegionBetweenWorlds (ProtectedRegion master, World destination) {
-        RegionManager destinationManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(destination);
-        ProtectedRegion result;
-        result = (master.getType().equals(RegionType.CUBOID)) ?
-                new ProtectedCuboidRegion(master.getId(), master.getMinimumPoint(), master.getMaximumPoint()):
-                new ProtectedPolygonalRegion(master.getId(), master.getPoints(), master.getMinimumPoint().y(),master.getMinimumPoint().y());
-        result.copyFrom(master);
-        if (destinationManager.hasRegion(master.getId())) destinationManager.removeRegion(master.getId());
-        destinationManager.addRegion(result);
-        return result;
-    }
+    public static final Set<BaseBlock> GLASS_ALL = Set.of(BlockTypes.BLACK_STAINED_GLASS.getDefaultState().toBaseBlock(),BlockTypes.WHITE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.RED_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.YELLOW_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GREEN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.ORANGE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PURPLE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.CYAN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.MAGENTA_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIME_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PINK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BROWN_STAINED_GLASS.getDefaultState().toBaseBlock());
 
     public static ProtectedRegion cloneRegionBetweenWorlds (ProtectedRegion master, String newID, World destination, BlockVector3 offset) {
         RegionManager destinationManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(destination);
@@ -51,7 +42,7 @@ public class WGUtils {
     public static BlockVector3 getCenterFloor(ProtectedRegion region) {
         BlockVector3 width = region.getMaximumPoint().subtract(region.getMinimumPoint());
         BlockVector3 center = region.getMinimumPoint().add(width.divide(2));
-        center.clampY(region.getMinimumPoint().y(),region.getMinimumPoint().y());
+        center = center.clampY(region.getMinimumPoint().y(),region.getMinimumPoint().y());
         return center;
     }
 

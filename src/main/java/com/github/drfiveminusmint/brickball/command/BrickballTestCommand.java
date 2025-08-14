@@ -21,11 +21,10 @@ public class BrickballTestCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("You must be a player to use this command");
             return true;
         }
-        Player player = (Player) sender;
         if (args.length < 1) {
             sender.sendMessage("Usage: /brickballtest (create/test) (id)");
             return true;

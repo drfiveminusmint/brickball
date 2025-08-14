@@ -14,6 +14,7 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockTypes;
@@ -28,25 +29,12 @@ import java.io.FileInputStream;
 import java.util.logging.Level;
 
 public class BrickballArena {
-    private ProtectedRegion masterRegion, spawnA, doorA,spawnB, doorB;
-    private World gameWorld;
-    private Location[] spawnLocations = new Location[2];
-    private BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
-    private Location brickSpawn;
-    private String templateID;
-
-    public BrickballArena(ArenaTemplate template, World destinationWorld) {
-        gameWorld = destinationWorld;
-        masterRegion = WGUtils.cloneRegionBetweenWorlds(template.getMasterRegion(), gameWorld);
-        spawnA = WGUtils.cloneRegionBetweenWorlds(template.getSpawnA(), gameWorld);
-        spawnLocations[0] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnA), gameWorld);
-        doorA = WGUtils.cloneRegionBetweenWorlds(template.getDoorA(),gameWorld);
-        spawnB = WGUtils.cloneRegionBetweenWorlds(template.getSpawnB(), gameWorld);
-        spawnLocations[1] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnB), gameWorld);
-        doorB = WGUtils.cloneRegionBetweenWorlds(template.getDoorB(), gameWorld);
-        brickSpawn = new Location(((BukkitWorld)destinationWorld).getWorld(), template.getBrickSpawn().x(), template.getBrickSpawn().y()+0.1, template.getBrickSpawn().z());
-        templateID = template.getID();
-    }
+    private final ProtectedRegion masterRegion, spawnA, doorA,spawnB, doorB;
+    private final World gameWorld;
+    private final Location[] spawnLocations = new Location[2];
+    private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
+    private final Location brickSpawn;
+    private final String templateID;
 
     public BrickballArena(ArenaTemplate template, Location minPoint, int matchID) {
         gameWorld = new BukkitWorld(minPoint.getWorld());
@@ -64,7 +52,7 @@ public class BrickballArena {
     }
 
     public void generateArena() {
-        File schematicFile = new File(Brickball.getTemplatesFolder().getAbsolutePath()+"/"+templateID+".schem");
+        File schematicFile = new File(Brickball.getTemplatesFolder(), templateID+".schem");
         if (!schematicFile.exists()) {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "Could not find file " + schematicFile.getAbsolutePath());
             this.cleanupArena();
@@ -127,9 +115,9 @@ public class BrickballArena {
     public void closeDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
-                    teamColors[0].glassType);
+                    teamColors[0].paneType);
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorB),
-                    teamColors[1].glassType);
+                    teamColors[1].paneType);
         } catch (WorldEditException ex) {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
         }
@@ -143,10 +131,30 @@ public class BrickballArena {
         };
     }
 
+    public boolean checkLocationInbounds(Location location) {
+        return masterRegion.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
+    }
+
     public Location getSpawnLocation (int team) {return spawnLocations[team];}
     public Location getBrickSpawn () {return brickSpawn;}
 
     public void setTeamColor(BrickballColor teamColor, int i) {
+
         teamColors[i] = teamColor;
+        //Dye doors
+        BlockVector3 lowCorner;
+        BlockVector3 highCorner;
+        if (i == 0) {
+            lowCorner = doorA.getMinimumPoint().add(-1,-1,-1);
+            highCorner = doorA.getMaximumPoint().add(1,1,1);
+        } else {
+            lowCorner = doorB.getMinimumPoint().add(-1,-1,-1);
+            highCorner = doorB.getMaximumPoint().add(1,1,1);
+        }
+        try (EditSession dyeSession = WorldEdit.getInstance().newEditSession(gameWorld)){
+            dyeSession.replaceBlocks(new CuboidRegion(lowCorner,highCorner), WGUtils.GLASS_ALL, teamColor.glassType);
+        } catch (WorldEditException ex) {
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+        }
     }
 }

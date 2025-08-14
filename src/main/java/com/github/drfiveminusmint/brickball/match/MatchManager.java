@@ -16,12 +16,13 @@ public class MatchManager {
     static final int MAX_MATCHES = 255;
     private BrickballMatch[] matches = new BrickballMatch[MAX_MATCHES];
     //Technically redundant but very useful if the number of matches becomes very large
-    private ConcurrentHashMap<Player,BrickballMatch> activePlayersMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Player,BrickballMatch> activePlayersMap = new ConcurrentHashMap<>();
 
     public void stopAllMatches()
     {
         // TODO make this async
         for (BrickballMatch match : matches) {
+            if (match == null) continue;
             match.shutdown();
             Brickball.getInstance().getLogger().log(Level.SEVERE, "gamer");
         }
@@ -78,11 +79,19 @@ public class MatchManager {
         match.joinMatch(player);
     }
 
-    public void leaveMatch(Player player, BrickballMatch match) {
+    // Have a player leave their current match.
+    // Returns true if it successfully removed a player from a match, false otherwise.
+    public boolean leaveMatch(Player player) {
+        BrickballMatch match = activePlayersMap.get(player);
+        if (match == null) return false;
         activePlayersMap.remove(player);
-        match.leaveMatch(player);
-        // End the match if no players remain
-        if (((HashSet) match.audiences()).isEmpty())
-            endMatch(match);
+        try {
+            match.leaveMatch(player);
+        } finally {
+            // End the match if no players remain
+            if (((HashSet) match.audiences()).isEmpty())
+                endMatch(match);
+        }
+        return true;
     }
 }

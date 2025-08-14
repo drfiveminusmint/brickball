@@ -1,0 +1,16 @@
+defaultSettings:
+  # The amount of arrows given to each player, each round.
+  arrows: 10
+  # Matches will be played until you score this many points.
+  pointsToWin: 5
+  # The number of ticks the game will wait to respawn killed players.
+  respawnDelay: 0
+  # The amount of saturation given to each player upon respawning.
+  saturation: 0.0
+  # If this is set to true, players killed by the environment without being tagged will reset the brick to its original location.
+  # This setting will always be treated as true if respawning is false, to prevent soft-locking.
+  brickFumbling: false
+  # Controls whether players will regenerate health on their own.
+  naturalRegeneration: true
+  # Controls whether players will respawn during the round.
+  respawning: true
