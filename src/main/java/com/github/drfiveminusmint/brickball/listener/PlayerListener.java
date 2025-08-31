@@ -3,6 +3,7 @@ package com.github.drfiveminusmint.brickball.listener;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -31,7 +32,7 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (playerMatch == null) return;
-        if (player.getInventory().contains(Material.BRICK)) {
+        if (player.getInventory().contains(Material.BRICK) && player.getGameMode().equals(GameMode.ADVENTURE)) {
             playerMatch.checkScoring(player);
         }
     }
@@ -44,7 +45,7 @@ public class PlayerListener implements Listener {
         //Override vanilla death functionality
         event.setCancelled(true);
         playerMatch.sendMessage(event.deathMessage());
-        if ((player.getKiller() != null && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)))) {
+        if (((player.getKiller() != null && player.getKiller().getGameMode().equals(GameMode.ADVENTURE)) && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)))) {
             // Transfer the brick to the killer if there is one
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
@@ -81,6 +82,15 @@ public class PlayerListener implements Listener {
             }.runTaskLater(Brickball.getInstance(), playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
         } else {
             player.setGameMode(GameMode.SPECTATOR);
+            // don't softlock if all players are dead
+            boolean playerAlive = false;
+            for (Audience audience : playerMatch.audiences())
+                if (audience instanceof Player p && p.getGameMode().equals(GameMode.ADVENTURE)) playerAlive = true;
+            if (!playerAlive) new BukkitRunnable() {
+                public void run () {
+                    playerMatch.startRound();
+                }
+            }.runTaskLater(Brickball.getInstance(), 20);
         }
     }
 

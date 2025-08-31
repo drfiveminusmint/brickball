@@ -97,7 +97,6 @@ public class BrickballMatch implements ForwardingAudience {
                 sword.setItemMeta(swordMeta);
                 inventory.addItem(sword);
                 inventory.addItem(new ItemStack(Material.CROSSBOW));
-                inventory.addItem(new ItemStack(Material.COOKED_BEEF, 8));
                 player.updateInventory();
             }
         //Setup spectators
@@ -133,6 +132,8 @@ public class BrickballMatch implements ForwardingAudience {
                 player.setFoodLevel(20);
                 player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
                 player.setFireTicks(0);
+                player.getInventory().remove(Material.COOKED_BEEF);
+                player.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, settings.getInt(MatchSettings.Setting.STEAKS)));
                 player.getInventory().remove(Material.ARROW);
                 player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
                 for (ItemStack itemStack : player.getInventory()) {
@@ -196,7 +197,7 @@ public class BrickballMatch implements ForwardingAudience {
                         new BukkitRunnable() {
                             @Override
                             public void run() {
-                                shutdown();
+                                Brickball.getInstance().getMatchManager().endMatch(BrickballMatch.this);
                             }
                         }.runTaskLater(Brickball.getInstance(), 200);
                     }

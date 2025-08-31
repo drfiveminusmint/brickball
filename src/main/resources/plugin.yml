@@ -1,5 +1,5 @@
 name: Brickball
-version: 1.1.0-Alpha
+version: 1.1.1-Alpha
 main: com.github.drfiveminusmint.brickball.Brickball
 author: drfiveminusminus
 depend: [WorldEdit, WorldGuard]
@@ -10,6 +10,7 @@ commands:
     permission: brickball.debug
     usage: /brickballtest (create/test) (id)
   brickball:
+    aliases: [bb]
     description: brick.
     usage: /brickball (create/join/leave/jointeam/map)
 permissions:

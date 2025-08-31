@@ -121,6 +121,10 @@ public class BrickballArena {
         } catch (WorldEditException ex) {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
         }
+        // re-dye doors to fix connection issues
+        // disgusting hack, replace this ASAP
+        setTeamColor(teamColors[0], 0);
+        setTeamColor(teamColors[1], 1);
     }
 
     public boolean checkLocationInSpawn(Location location, int team) {
