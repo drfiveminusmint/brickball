@@ -132,10 +132,14 @@ public class BrickballMatch implements ForwardingAudience {
                 player.setFoodLevel(20);
                 player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
                 player.setFireTicks(0);
-                player.getInventory().remove(Material.COOKED_BEEF);
-                player.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, settings.getInt(MatchSettings.Setting.STEAKS)));
-                player.getInventory().remove(Material.ARROW);
-                player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
+                if (settings.getInt(MatchSettings.Setting.STEAKS) > 0) {
+                    player.getInventory().remove(Material.COOKED_BEEF);
+                    player.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, settings.getInt(MatchSettings.Setting.STEAKS)));
+                }
+                if (settings.getInt(MatchSettings.Setting.ARROWS) > 0) {
+                    player.getInventory().remove(Material.ARROW);
+                    player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
+                }
                 for (ItemStack itemStack : player.getInventory()) {
                     if (itemStack == null) continue;
                     if (itemStack.getItemMeta() instanceof CrossbowMeta meta) {
@@ -150,7 +154,7 @@ public class BrickballMatch implements ForwardingAudience {
                     if (offhandItem.getItemMeta() instanceof CrossbowMeta meta) {
                         meta.setChargedProjectiles(null);
                         offhandItem.setItemMeta(meta);
-                    } else if (offhandItem.getType().equals(Material.ARROW)) {
+                    } else if (offhandItem.getType().equals(Material.ARROW) || offhandItem.getType().equals(Material.COOKED_BEEF)) {
                         player.getInventory().setItemInOffHand(null);
                     }
                 }
