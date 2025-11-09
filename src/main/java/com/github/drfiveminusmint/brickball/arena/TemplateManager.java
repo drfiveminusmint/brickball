@@ -60,7 +60,7 @@ public class TemplateManager {
                     Double.parseDouble(locationRaw[0]),
                     Double.parseDouble(locationRaw[1]),
                     Double.parseDouble(locationRaw[2]));
-            return registerTemplate(ArenaTemplate.createByID(target.getName().replaceAll(".bbmap", ""),brickSpawn, new BukkitWorld(world)));
+            return registerTemplate(ArenaTemplate.createByID(target.getName().replaceAll(".bbmap", ""),brickSpawn, new BukkitWorld(world), false));
         } catch (IOException ex) {
             ex.printStackTrace();
             return false;

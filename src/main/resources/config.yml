@@ -1,3 +1,13 @@
+# The maximum number of concurrent matches possible on the server
+maxMatches: 16
+# The maximum allowed size of an arena
+arenaMaxSize: 240
+# The default world to set up Brickball matches in. Don't set this to any world you care about.
+world: brickball
+# Set to true to load in an arena from each template on server startup
+preloadArenas: false
+
+# Default match settings
 defaultSettings:
   # The amount of arrows given to each player, each round.
   arrows: 10
@@ -7,6 +17,8 @@ defaultSettings:
   respawnDelay: 0
   # The number of steaks given to each player, each round.
   steaks: 8
+  # Time in seconds to complete a match (-1 for no timer)
+  timer: -1
   # The amount of saturation given to each player upon respawning.
   saturation: 0.0
   # If this is set to true, players killed by the environment without being tagged will reset the brick to its original location.

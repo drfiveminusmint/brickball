@@ -10,6 +10,7 @@ import com.sk89q.worldedit.bukkit.BukkitWorld;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -40,6 +41,7 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("start")) return startCommand(player);
         if (args[0].equalsIgnoreCase("teamColor")) return teamColorCommand(player, args);
         if (args[0].equalsIgnoreCase("setting")) return settingCommand(player, args);
+        if (args[0].equalsIgnoreCase("setworld")) return setWorldCommand(player, args);
         return false;
     }
 
@@ -79,12 +81,20 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("Usage: /brickball create (map)");
             return true;
         }
+        if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) != null) {
+            player.sendMessage("You're already in a Brickball match.");
+            return true;
+        }
+        if (Brickball.getInstance().getMatchWorld() == null)
+        {
+            player.sendMessage("Error: Match world not set. Set it with /brickball setWorld");
+        }
         ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[1]);
         if (template == null) {
             player.sendMessage(String.format("Couldn't find arena template: %s", args[1]));
 
         }
-        BrickballMatch newMatch = Brickball.getInstance().getMatchManager().startMatch(template, player.getLocation());
+        BrickballMatch newMatch = Brickball.getInstance().getMatchManager().startMatch(template, 10);
         if (newMatch == null) {
             player.sendMessage("Error creating match!");
             return true;
@@ -222,7 +232,7 @@ public class BrickballCommand implements TabExecutor {
             TemplateManager manager = Brickball.getInstance().getTemplateManager();
             ArenaTemplate newTempate;
             try {
-                newTempate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()));
+                newTempate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()), true);
             } catch (Exception ex) {
                 player.sendMessage("Error creating map.");
                 return true;
@@ -272,8 +282,28 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of("create", "join", "jointeam", "leave", "map", "start", "teamcolor", "setting");
+        if (args.length == 1) return List.of("create", "join", "jointeam", "leave", "map", "start", "teamcolor", "setting", "setworld");
         return null;
+    }
+
+    private boolean setWorldCommand(Player player, String[] args) {
+        if (!player.hasPermission("brickball.world.set"))
+            return insufficientPermissions(player);
+        if (args.length < 2) {
+            Brickball.getInstance().setMatchWorld(player.getWorld());
+            if (player.getWorld().getName().equalsIgnoreCase("world"))
+                player.sendMessage("WARNING: You have the default world as the match world. This is usually a bad idea, as this world may be destroyed. You should probably run this command in another world.");
+            else
+                player.sendMessage("WARNING: You have set your current world as the match world. Don't do this if you care about anything in this world.");
+            player.sendMessage("Brickball match world successfully set.");
+        } else {
+            World newWorld = Bukkit.getServer().getWorld(args[1]);
+            if (newWorld != null) {
+                Brickball.getInstance().setMatchWorld(newWorld);
+                player.sendMessage("Brickball match world successfully set.");
+            }
+        }
+        return true;
     }
 
     private boolean insufficientPermissions(Player player) {

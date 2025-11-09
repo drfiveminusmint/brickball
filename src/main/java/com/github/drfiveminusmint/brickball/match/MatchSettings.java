@@ -24,6 +24,7 @@ public class MatchSettings {
         properties.put(Setting.POINTS_TO_WIN, section.getInt("pointsToWin", 5));
         properties.put(Setting.RESPAWN_DELAY, section.getInt("respawnDelay", 0));
         properties.put(Setting.STEAKS, section.getInt("steaks", 8));
+        properties.put(Setting.TIMER, section.getInt("timer",0));
         properties.put(Setting.SATURATION, section.getDouble("saturation", 0.0));
         properties.put(Setting.BRICK_FUMBLING, section.getBoolean("brickFumbling", false));
         properties.put(Setting.NATURAL_REGENERATION, section.getBoolean("naturalRegeneration", true));
@@ -63,10 +64,11 @@ public class MatchSettings {
         public static final NamespacedKey RESPAWN_DELAY = new NamespacedKey(Brickball.getPlugin(Brickball.class), "respawnDelay");
         public static final NamespacedKey RESPAWNING = new NamespacedKey(Brickball.getPlugin(Brickball.class), "respawning");
         public static final NamespacedKey POINTS_TO_WIN = new NamespacedKey(Brickball.getPlugin(Brickball.class), "pointsToWin");
+        public static final NamespacedKey TIMER = new NamespacedKey(Brickball.getPlugin(Brickball.class), "timer");
         public static final NamespacedKey SATURATION = new NamespacedKey(Brickball.getPlugin(Brickball.class), "saturation");
         public static final NamespacedKey STEAKS = new NamespacedKey(Brickball.getPlugin(Brickball.class), "steaks");
 
-        public static final Set<NamespacedKey> keys = Set.of(ARROWS, BRICK_FUMBLING, NATURAL_REGENERATION, POINTS_TO_WIN, RESPAWN_DELAY, RESPAWNING, SATURATION, STEAKS);
+        public static final Set<NamespacedKey> keys = Set.of(ARROWS, BRICK_FUMBLING, NATURAL_REGENERATION, POINTS_TO_WIN, RESPAWN_DELAY, RESPAWNING, SATURATION, STEAKS, TIMER);
         @Nullable public static NamespacedKey getKey(@NotNull String string) {
             for (NamespacedKey key : keys)
                 if (key.getKey().equalsIgnoreCase(string)) return key;

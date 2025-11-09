@@ -35,25 +35,13 @@ public class BrickballTestCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("joinTeam")) return joinTeamCommand(player, args[1]);
         if (args[0].equalsIgnoreCase("startGame")) return startMatchCommand(player);
         if (args[0].equalsIgnoreCase("cleanup")) return cleanupCommand(player);
-        if (args[0].equalsIgnoreCase("asdf")) return asdfCommand(player, args[1]);
         return false;
-    }
-
-    public boolean asdfCommand(Player player, String arg) {
-        player.getInventory().clear();
-        ItemStack hat = new ItemStack(Material.LEATHER_HELMET);
-        LeatherArmorMeta meta = (LeatherArmorMeta) hat.getItemMeta();
-        meta.setColor(Color.AQUA);
-        hat.setItemMeta(meta);
-        player.getInventory().setHelmet(hat);
-        player.updateInventory();
-        return true;
     }
 
     public boolean createCommand(CommandSender sender, String id)
     {
         World WEWorld = new BukkitWorld(((Player) sender).getWorld());
-        ArenaTemplate newArena = ArenaTemplate.createByID(id, ((Player) sender).getLocation(), WEWorld);
+        ArenaTemplate newArena = ArenaTemplate.createByID(id, ((Player) sender).getLocation(), WEWorld, true);
         newArena.saveSchematic(WEWorld);
         if (Brickball.getInstance().getTemplateManager().registerTemplate(newArena)) {
             sender.sendMessage("Successfully created template " + id);
@@ -71,7 +59,7 @@ public class BrickballTestCommand implements CommandExecutor {
             sender.sendMessage("Error: could not find template " + id);
             return true;
         }
-        Brickball.getInstance().getMatchManager().startMatch(template, ((Player)sender).getLocation());
+        Brickball.getInstance().getMatchManager().startMatch(template, 10);
         sender.sendMessage("Successfully created a new match!");
         return true;
     }

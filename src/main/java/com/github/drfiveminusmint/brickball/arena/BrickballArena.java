@@ -1,6 +1,7 @@
 package com.github.drfiveminusmint.brickball.arena;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.scheduling.*;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.github.drfiveminusmint.brickball.util.WGUtils;
 import com.sk89q.worldedit.EditSession;
@@ -26,6 +27,8 @@ import org.bukkit.Location;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class BrickballArena {
@@ -51,39 +54,25 @@ public class BrickballArena {
         templateID = template.getID();
     }
 
-    public void generateArena() {
-        File schematicFile = new File(Brickball.getTemplatesFolder(), templateID+".schem");
-        if (!schematicFile.exists()) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "Could not find file " + schematicFile.getAbsolutePath());
-            this.cleanupArena();
-            return;
-        }
-        Clipboard clipboard;
-        ClipboardFormat format = ClipboardFormats.findByFile(schematicFile);
-        if (format == null)
-        {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "Error finding file format for " + schematicFile.getAbsolutePath());
-            this.cleanupArena();
-            return;
-        }
-        try  {
-            ClipboardReader reader = format.getReader(new FileInputStream(schematicFile));
-            clipboard = reader.read();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "Error loading file " + schematicFile.getAbsolutePath());
-            return;
-        }
-        try (EditSession editSession = WorldEdit.getInstance().newEditSession(gameWorld)) {
-            Operation operation = new ClipboardHolder(clipboard)
-                    .createPaste(editSession)
-                    .to(masterRegion.getMinimumPoint())
-                    .build();
-            Operations.complete(operation);
-        } catch (WorldEditException e) {
-            e.printStackTrace();
+    public void generateArena(int priority) {
+        File directory = new File(Brickball.getTemplatesFolder(), templateID);
+        for (File f : Objects.requireNonNull(directory.listFiles(pathname -> {
+            try {
+                if (pathname.getName().contains(".schem"))
+                    return true;
+            } catch (Exception ex) {
+                return false;
+            }
+            return false;
+        }))) {
+            Brickball.getInstance().getScheduler().submitTask(new SchematicLoadTask(
+                    f,
+                    gameWorld,
+                    masterRegion.getMinimumPoint(),
+                    priority));
         }
     }
+
 
     public void cleanupArena() {
         Brickball.getInstance().getLogger().log(Level.SEVERE, "Cleaning Up");
@@ -93,11 +82,8 @@ public class BrickballArena {
         manager.removeRegion(doorA.getId());
         manager.removeRegion(spawnB.getId());
         manager.removeRegion(doorB.getId());
-        try (EditSession cleanupSession = WorldEdit.getInstance().newEditSession(gameWorld)){
-            cleanupSession.setBlocks(WorldEditRegionConverter.convertToRegion(masterRegion),
-                    BlockTypes.AIR.getDefaultState().toBaseBlock());
-        } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+        for (CuboidRegion chunk : WGUtils.subdivideCuboidRegion(WorldEditRegionConverter.convertToRegion(masterRegion))) {
+            Brickball.getInstance().getScheduler().submitTask(new RegionCleanupTask(chunk, gameWorld, 0));
         }
     }
 
@@ -161,4 +147,5 @@ public class BrickballArena {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
         }
     }
+    public String getTemplateID() {return templateID;}
 }
