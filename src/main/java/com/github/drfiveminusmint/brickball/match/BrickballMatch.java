@@ -275,16 +275,19 @@ public class BrickballMatch implements ForwardingAudience {
 
     public void shutdown () {
         state = MatchState.STOPPING;
+        arena.cleanupArena();
+        removeGroundEntities();
+        sendMessage(Component.text("[Debug] Shutdown Successful"));
+        for (Player player : players) {
+            for (Team team : teams)
+                team.removePlayer(player);
+            cleanupPlayer(player);
+        }
         for (Team team : teams) {
             Set<String> entries = team.getEntries();
             team.removeEntries(entries);
             team.unregister();
         }
-        arena.cleanupArena();
-        removeGroundEntities();
-        sendMessage(Component.text("[Debug] Shutdown Successful"));
-        for (Player player : players)
-            cleanupPlayer(player);
         players.clear();
         // Prevent a resource leak
         try {
@@ -296,13 +299,19 @@ public class BrickballMatch implements ForwardingAudience {
     public void freeze() {
         state = MatchState.STOPPING;
         // remove all players
-        for (Player player : players)
-            leaveMatch(player);
+        for (Player player : players) {
+            for (Team team : teams)
+                team.removePlayer(player);
+            cleanupPlayer(player);
+        }
+        players.clear();
         // reset scores
         objective.getScore(teamNames[0]).setScore(0);
         objective.getScore(teamNames[1]).setScore(0);
         // remove items
         removeGroundEntities();
+        // clear stat tracking
+        kills.clear(); scores.clear(); deaths.clear();
         try {
             timeHelper.cancel();
         } catch (Exception ex) {}
