@@ -25,6 +25,7 @@ public final class Brickball extends JavaPlugin {
     private MatchManager matchManager;
     private World matchWorld;
     private BrickballScheduler scheduler;
+    private boolean doBackgroundArenaGeneration = false;
 
     public static Brickball getInstance() {
         return instance;
@@ -76,7 +77,8 @@ public final class Brickball extends JavaPlugin {
                 getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
         }
 
-        if (getConfig().getBoolean("preloadArenas", false)) {
+        doBackgroundArenaGeneration = getConfig().getBoolean("preloadArenas", false);
+        if (doBackgroundArenaGeneration) {
             int i = 0;
             for (ArenaTemplate template : templateManager.templates.values()) {
                 scheduler.submitTask(new CreateMatchTask(template.getID(), -1));
@@ -86,6 +88,10 @@ public final class Brickball extends JavaPlugin {
 
     public World getMatchWorld() {return matchWorld;}
     public void setMatchWorld(World world) {matchWorld = world;}
+
+    public boolean isBackgroundGenerationEnabled() {
+        return doBackgroundArenaGeneration;
+    }
 
     @Override
     public void onDisable() {
