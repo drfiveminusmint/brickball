@@ -382,17 +382,17 @@ public class BrickballMatch implements ForwardingAudience {
         for (Audience audience : viewers) {
             audience.sendMessage(Component.text("Kills:").color(NamedTextColor.GOLD));
             for (Player player : kills.keySet())
-                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
+                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player) != null && scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
                         .append(Component.text(": ").color(NamedTextColor.WHITE))
                         .append(Component.text(kills.get(player).value()).color(NamedTextColor.WHITE)));
             audience.sendMessage(Component.text("Deaths:").color(NamedTextColor.GOLD));
             for (Player player : deaths.keySet())
-                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
+                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player) != null && scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
                         .append(Component.text(": ").color(NamedTextColor.WHITE))
                         .append(Component.text(deaths.get(player).value())).color(NamedTextColor.WHITE));
             audience.sendMessage(Component.text("Points Scored:").color(NamedTextColor.GOLD));
             for (Player player : scores.keySet())
-                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
+                audience.sendMessage(player.displayName().color(teamColors[(scoreboard.getPlayerTeam(player) != null && scoreboard.getPlayerTeam(player).equals(teams[0])) ? 0 : 1].textColor)
                         .append(Component.text(": ").color(NamedTextColor.WHITE))
                         .append(Component.text(scores.get(player).value()).color(NamedTextColor.WHITE)));
         }

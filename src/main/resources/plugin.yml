@@ -3,6 +3,7 @@ version: 1.2-Alpha
 main: com.github.drfiveminusmint.brickball.Brickball
 author: drfiveminusminus
 depend: [WorldEdit, WorldGuard]
+softdepend: [Multiverse]
 api-version: '1.21'
 commands:
   brickballtest:
