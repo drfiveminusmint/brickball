@@ -4,6 +4,7 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
+import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -42,7 +43,27 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("teamColor")) return teamColorCommand(player, args);
         if (args[0].equalsIgnoreCase("setting")) return settingCommand(player, args);
         if (args[0].equalsIgnoreCase("setworld")) return setWorldCommand(player, args);
+        if (args[0].equalsIgnoreCase("admin")) return adminCommand(player, args);
         return false;
+    }
+
+    public boolean adminCommand (Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage("Usage: /brickball admin (cleanworld/shutdown/reload)");
+            return true;
+        }
+        if (args[1].equalsIgnoreCase("cleanworld")) {
+            if (Brickball.getInstance().getMatchManager().getMatch(null,null) != null) {
+                player.sendMessage("Some matches are currently running, please run \"/brickball admin shutdown\" first");
+                return true;
+            }
+            if (!Brickball.getInstance().getMatchManager().deepCleanWorld())
+                player.sendMessage("Something went wrong deep-cleaning the world. Did you run \"/brickball admin shutdown\" first?");
+        }
+        if (args[1].equalsIgnoreCase("shutdown")) {
+            Brickball.getInstance().getMatchManager().stopAllMatches();
+        }
+        return true;
     }
 
     public boolean teamColorCommand (Player player, String[] args) {
@@ -214,7 +235,7 @@ public class BrickballCommand implements TabExecutor {
 
     public boolean mapCommand(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("Usage: /brickball map (create/list)");
+            player.sendMessage("Usage: /brickball map (save/list)");
             return true;
         }
         if (args[1].equalsIgnoreCase("list")) {
@@ -227,14 +248,14 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("Usage: /brickball map create (id)");
             return true;
         }
-        if (args[1].equalsIgnoreCase("create")) {
-            if (!player.hasPermission("brickball.map.create")) return insufficientPermissions(player);
+        if (args[1].equalsIgnoreCase("save")) {
+            if (!player.hasPermission("brickball.map.save")) return insufficientPermissions(player);
             TemplateManager manager = Brickball.getInstance().getTemplateManager();
             ArenaTemplate newTempate;
             try {
                 newTempate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()), true);
             } catch (Exception ex) {
-                player.sendMessage("Error creating map.");
+                player.sendMessage("Error saving map.");
                 return true;
             }
             if (manager.findTemplate(args[2]) != null)
@@ -270,7 +291,7 @@ public class BrickballCommand implements TabExecutor {
             return result;
         }
         if (args[0].equalsIgnoreCase("create")) return Brickball.getInstance().getTemplateManager().listTemplateIDs();
-        if (args[0].equalsIgnoreCase("map")) return List.of("create", "list");
+        if (args[0].equalsIgnoreCase("map")) return List.of("save", "list");
         if (args[0].equalsIgnoreCase("jointeam")) return List.of("1", "2", "3");
         if (args[0].equalsIgnoreCase("teamColor")) {
             if (args.length == 2) return List.of("1", "2");

@@ -3,7 +3,16 @@ package com.github.drfiveminusmint.brickball.match;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.scheduling.ArenaRestockingTask;
+import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
+import com.github.drfiveminusmint.brickball.scheduling.RegionCleanupTask;
+import com.github.drfiveminusmint.brickball.util.WGUtils;
+import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.world.World;
 import net.kyori.adventure.audience.Audience;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -118,6 +127,18 @@ public class MatchManager {
             if (((HashSet) match.audiences()).isEmpty())
                 freezeMatch(match);
         }
+        return true;
+    }
+
+    public boolean deepCleanWorld() {
+        // don't deep clean if any matches are active
+        if (getMatch(null,null) != null) return false;
+        BukkitWorld bukkitWorld = new BukkitWorld(Brickball.getInstance().getMatchWorld());
+        for (CuboidRegion region : WGUtils.subdivideCuboidRegion(   // Subdivide the entire match area into chunks
+                new CuboidRegion(bukkitWorld,
+                        new BlockVector3 (0, 100, 0),
+                        new BlockVector3(ARENA_GRID_SIDE_LENGTH*ARENA_SPACING, 255, ARENA_GRID_SIDE_LENGTH*ARENA_SPACING))))
+            Brickball.getInstance().getScheduler().submitTask(new RegionCleanupTask(region, bukkitWorld, Integer.MAX_VALUE));
         return true;
     }
 

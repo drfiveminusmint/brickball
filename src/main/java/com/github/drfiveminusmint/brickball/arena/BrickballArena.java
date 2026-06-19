@@ -39,6 +39,8 @@ public class BrickballArena {
     private final Location brickSpawn;
     private final String templateID;
 
+    public boolean built = false;
+
     public BrickballArena(ArenaTemplate template, Location minPoint, int matchID) {
         gameWorld = new BukkitWorld(minPoint.getWorld());
         // Calculate offset

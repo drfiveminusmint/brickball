@@ -12,7 +12,6 @@ import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.util.Objects;
@@ -96,5 +95,6 @@ public final class Brickball extends JavaPlugin {
     @Override
     public void onDisable() {
         matchManager.stopAllMatches();
+        scheduler.shutdown();
     }
 }

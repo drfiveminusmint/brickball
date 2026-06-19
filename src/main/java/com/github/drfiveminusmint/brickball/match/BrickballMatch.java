@@ -18,6 +18,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.BlockFace;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -46,12 +47,13 @@ import java.util.Set;
 public class BrickballMatch implements ForwardingAudience {
     private final int matchID;
     private Scoreboard scoreboard;
-    private Objective objective;
+    private Objective matchScoreObjective;
     private final Team[] teams = new Team[3];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
     private final String[] teamNames = {"Team 1", "Team 2", "Spectators"};
     private final HashSet<Player> players = new HashSet<>();
-    private final BossBar timerBar = Bukkit.createBossBar("", BarColor.YELLOW, BarStyle.SEGMENTED_20);;
+    private final BossBar timerBar = Bukkit.createBossBar("", BarColor.YELLOW, BarStyle.SEGMENTED_20);
+    private final BossBar shotClockBar = Bukkit.createBossBar("", BarColor.RED, BarStyle.SEGMENTED_10);
     private final BrickballArena arena;
     private final MatchSettings settings = new MatchSettings();
     private TimerUpdateHelper timeHelper = new TimerUpdateHelper(this);
@@ -59,8 +61,7 @@ public class BrickballMatch implements ForwardingAudience {
     private final Map<Player, Counter> kills = new HashMap<>(), deaths = new HashMap<>(), scores = new HashMap<>();
 
     private static final Set<EntityType> CLEARING_ENTITIES = Set.of(EntityType.ITEM, EntityType.ARROW);
-    private int timer, timeLimit;
-
+    private int timer, timeLimit, shotClock, shotClockMax;
     private MatchState state;
 
     public BrickballMatch(ArenaTemplate template, Location minPoint, int matchID) {
@@ -70,33 +71,39 @@ public class BrickballMatch implements ForwardingAudience {
 
     public void initialize(int priority) {
         scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
-        objective = scoreboard.registerNewObjective("match score", Criteria.DUMMY, Component.text("Points"));
+        matchScoreObjective = scoreboard.registerNewObjective("match score", Criteria.DUMMY, Component.text("Points"));
         for (int i = 0; i <= 1; i++) {
             teams[i] = scoreboard.registerNewTeam(teamNames[i]);
             teams[i].color(teamColors[i].textColor);
             teams[i].addEntry(teamNames[i]);
             teams[i].setAllowFriendlyFire(false);
-            objective.getScore(teamNames[i]).setScore(0);
+            matchScoreObjective.getScore(teamNames[i]).setScore(0);
         }
         state = MatchState.PREPARING;
         teams[2] = scoreboard.registerNewTeam(teamNames[2]);
-        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        objective.setAutoUpdateDisplay(true);
+        matchScoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        matchScoreObjective.setAutoUpdateDisplay(true);
+        shotClockBar.setVisible(false);
         arena.generateArena(priority);
     }
 
     public boolean startMatch () {
         if (state == MatchState.RUNNING || state == MatchState.STOPPING) return false;
         timeLimit = settings.getInt(MatchSettings.Setting.TIMER);
+        shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
+        timeHelper = new TimerUpdateHelper(this);
+        try { // horrible
+            timeHelper.runTaskTimer(Brickball.getInstance(), 0, 20);
+        } catch (Exception ex) {}
         if (timeLimit >= 1) {
             timer = 0;
             for (Player player : players)
                 timerBar.addPlayer(player);
-            updateBossBar();
-            timeHelper = new TimerUpdateHelper(this);
-            try { // horrible
-                timeHelper.runTaskTimer(Brickball.getInstance(), 0, 20);
-            } catch (Exception ex) {}
+            updateBossBar(timerBar, timer, timeLimit, "Time Remaining: %d:%02d");
+        }
+        if (shotClockMax >= 1) {
+            for (Player player : players)
+                shotClockBar.addPlayer(player);
         }
         //TODO more elegant handling
         for (int i = 0; i <= 1; i++)
@@ -119,6 +126,8 @@ public class BrickballMatch implements ForwardingAudience {
 
     public void startRound() {
         arena.closeDoors();
+        shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
+        shotClockBar.setVisible(false);
         for (int i = 0; i <= 1; i++)
             for (String string : teams[i].getEntries()) {
                 Player player = Bukkit.getServer().getPlayer(string);
@@ -134,10 +143,13 @@ public class BrickballMatch implements ForwardingAudience {
                     player.setUnsaturatedRegenRate(Integer.MAX_VALUE);
                     player.setSaturatedRegenRate(Integer.MAX_VALUE);
                 }
+                // Full heal and clear all status
                 player.heal(20);
                 player.setFoodLevel(20);
                 player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
                 player.setFireTicks(0);
+                player.clearActivePotionEffects();
+                // Give steaks and arrows
                 if (settings.getInt(MatchSettings.Setting.STEAKS) > 0) {
                     player.getInventory().remove(Material.COOKED_BEEF);
                     player.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, settings.getInt(MatchSettings.Setting.STEAKS)));
@@ -146,10 +158,10 @@ public class BrickballMatch implements ForwardingAudience {
                     player.getInventory().remove(Material.ARROW);
                     player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
                 }
+                // Remove any charged arrows from the crossbow
                 for (ItemStack itemStack : player.getInventory()) {
                     if (itemStack == null) continue;
                     if (itemStack.getItemMeta() instanceof CrossbowMeta meta) {
-                        meta.setUnbreakable(true);
                         meta.setChargedProjectiles(null);
                         itemStack.setItemMeta(meta);
                     }
@@ -189,13 +201,14 @@ public class BrickballMatch implements ForwardingAudience {
         for (int i = 0; i <= 1; i++)
             if (teams[i].hasPlayer(player))
                 if (arena.checkLocationInSpawn(player.getLocation(), 1-i)) {
-                    objective.getScore(teamNames[i]).setScore(objective.getScore(teamNames[i]).getScore() + 1);
+                    matchScoreObjective.getScore(teamNames[i]).setScore(matchScoreObjective.getScore(teamNames[i]).getScore() + 1);
                     player.getInventory().remove(Material.BRICK);
                     player.setGlowing(false);
                     player.removePotionEffect(PotionEffectType.WEAKNESS);
                     playSound(Sound.sound(Key.key("block.glass.break"), Sound.Source.BLOCK, 30f, 2f));
+                    stopShotClock();
                     reportScore(player);
-                    if (objective.getScore(teamNames[i]).getScore() < settings.getInt(MatchSettings.Setting.POINTS_TO_WIN))
+                    if (matchScoreObjective.getScore(teamNames[i]).getScore() < settings.getInt(MatchSettings.Setting.POINTS_TO_WIN))
                         startRound();
                     else {
                         sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[i]).color(teamColors[i].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
@@ -217,6 +230,8 @@ public class BrickballMatch implements ForwardingAudience {
         brick.setItemStack(new ItemStack(Material.BRICK, 1));
         // STAY THERE
         brick.setVelocity(new Vector(0, 0, 0));
+        if(brickSpawn.getBlock().getRelative(BlockFace.DOWN).getType().isAir()) // Make sure the brick cannot fall
+            brickSpawn.getBlock().getRelative(BlockFace.DOWN).setType(Material.STONE);
         brick.setGlowing(true);
     }
 
@@ -230,6 +245,8 @@ public class BrickballMatch implements ForwardingAudience {
             player.teleport(arena.getBrickSpawn());
             if (settings.getInt(MatchSettings.Setting.TIMER) != -1)
                 timerBar.addPlayer(player);
+            if (settings.getInt(MatchSettings.Setting.SHOT_CLOCK) != -1)
+                shotClockBar.addPlayer(player);
         }
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" joined the match.")));
         return true;
@@ -306,13 +323,13 @@ public class BrickballMatch implements ForwardingAudience {
         }
         players.clear();
         // reset scores
-        objective.getScore(teamNames[0]).setScore(0);
-        objective.getScore(teamNames[1]).setScore(0);
+        matchScoreObjective.getScore(teamNames[0]).setScore(0);
+        matchScoreObjective.getScore(teamNames[1]).setScore(0);
         // remove items
         removeGroundEntities();
         // clear stat tracking
         kills.clear(); scores.clear(); deaths.clear();
-        try {
+        try { // Horrible but bukkit scheduling loves to chuck random exceptions at me here
             timeHelper.cancel();
         } catch (Exception ex) {}
         state = MatchState.FROZEN;
@@ -348,6 +365,7 @@ public class BrickballMatch implements ForwardingAudience {
     private void setupPlayer(Player player, int team) {
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
+        // setup armor
         inventory.setHelmet(new ItemStack(Material.LEATHER_HELMET));
         inventory.setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
         inventory.setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
@@ -358,13 +376,14 @@ public class BrickballMatch implements ForwardingAudience {
         for (ItemStack armorPiece : inventory.getArmorContents()) {
             armorPiece.setItemMeta(meta);
         }
+        // setup weapons
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
         ItemMeta swordMeta = sword.getItemMeta();
         swordMeta.setUnbreakable(true);
         sword.setItemMeta(swordMeta);
         inventory.addItem(sword);
         inventory.addItem(new ItemStack(Material.CROSSBOW));
-        player.updateInventory();
+        player.updateInventory(); // this needs to run for the inventory changes to apply
     }
     private void cleanupPlayer(Player player) {
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -374,6 +393,7 @@ public class BrickballMatch implements ForwardingAudience {
         player.setGameMode(GameMode.SURVIVAL);
         player.setRespawnLocation(player.getWorld().getSpawnLocation(), true);
         timerBar.removePlayer(player);
+        shotClockBar.removePlayer(player);
         if (player.getRespawnLocation() != null)
             player.teleport(player.getRespawnLocation());
         player.getInventory().clear();
@@ -407,22 +427,63 @@ public class BrickballMatch implements ForwardingAudience {
         }
     }
 
-    private void updateBossBar() {
-        timerBar.setTitle(String.format("Time Remaining: %d:%02d", ((timeLimit-timer) / 60), (timeLimit-timer) % 60));
-        timerBar.setProgress((timeLimit-timer) / (timeLimit * 1.0));
+    private void updateBossBar(BossBar bar, int currentTime, int maxTime, String titleFormat) {
+        bar.setTitle(String.format(titleFormat, ((maxTime-currentTime) / 60), (maxTime-currentTime) % 60));
+        bar.setProgress((maxTime-currentTime) / (maxTime * 1.0));
     }
 
     public void tickTimer() {
+        // shotClockMax = 0 indicates the shot clock is disabled, shotClock = -1 indicates it is not running
+        if ((shotClockMax > 0) && (shotClock != -1) && state.equals(MatchState.RUNNING)) {
+            // Shotclock is enabled and active
+            shotClockBar.setVisible(true);
+            updateBossBar(shotClockBar, shotClockMax - (--shotClock), shotClockMax, "Shot Clock: %d:%02d");
+            if (shotClock == 0) {
+                for(Player player : players)
+                    if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)) {
+                        // Shot clock has expired
+                        // Remove the brick from the offending team
+                        player.getInventory().remove(Material.BRICK);
+                        if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                            player.getInventory().setItemInOffHand(null);
+                        player.updateInventory();
+                        int reboundTeam = (teams[0].hasPlayer(player)) ? 1 : 0;
+                        // Notify players
+                        playSound(Sound.sound(Key.key("entity.blaze.death"), Sound.Source.BLOCK, 5f, 1F));
+                        sendMessage(Component.text("[Brickball] ").color(NamedTextColor.DARK_RED)
+                                .append(Component.text(teamNames[1-reboundTeam]).color(teamColors[1-reboundTeam].textColor))
+                                .append(Component.text(" has displeased the BRICK. It transfers itself to ").color(NamedTextColor.DARK_RED))
+                                .append(Component.text(teamNames[reboundTeam]).color(teamColors[reboundTeam].textColor))
+                                .append(Component.text("...").color(NamedTextColor.DARK_RED))
+                        );
+                        // Reset the round
+                        startRound();
+                        // Override brick spawn
+                        removeGroundEntities();
+                        Item brick = (Item) arena.getSpawnLocation(reboundTeam).getWorld().spawnEntity(arena.getSpawnLocation(reboundTeam), EntityType.ITEM);
+                        brick.setItemStack(new ItemStack(Material.BRICK, 1));
+                    }
+                stopShotClock();
+            } else if (shotClock == 20) {
+                // Warn the players
+                playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
+                sendMessage(Component.text("[Brickball] The BRICK grows impatient! Attempt to score within the next 20 seconds! Or else...").color(NamedTextColor.DARK_RED));
+            } else if (shotClock <= 5) {
+                playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
+            }
+        } else {
+            // don't display shot clock bar if invisible
+            shotClockBar.setVisible(false);
+        }
         if (timer < timeLimit) {
             timer++;
-            updateBossBar();
-        } else {
+            updateBossBar(timerBar, timer, timeLimit, "Time Remaining: %d:%02d");
+        } else if (timeLimit > 0) { // end the match if the match timer is enabled and time is over the limit
             int winningTeam = 0;
-            // end the game
-            if (objective.getScore(teamNames[0]).getScore() == objective.getScore(teamNames[1]).getScore())
+            if (matchScoreObjective.getScore(teamNames[0]).getScore() == matchScoreObjective.getScore(teamNames[1]).getScore())
                 sendMessage(Component.text("[Brickball] The match ended in a tie!").color(NamedTextColor.GOLD));
             else {
-                winningTeam = (objective.getScore(teamNames[0]).getScore() > objective.getScore(teamNames[1]).getScore()) ? 0 : 1;
+                winningTeam = (matchScoreObjective.getScore(teamNames[0]).getScore() > matchScoreObjective.getScore(teamNames[1]).getScore()) ? 0 : 1;
                 sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[winningTeam]).color(teamColors[winningTeam].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
             }
             displayStats(players);
@@ -452,4 +513,11 @@ public class BrickballMatch implements ForwardingAudience {
     public String getMapID() {return arena.getTemplateID();}
 
     public void pause() {state = MatchState.PAUSED;}
+    public void startShotClock() {
+        if (shotClockMax <= 0) return;
+        shotClock = shotClockMax;
+        updateBossBar(shotClockBar, 0, shotClockMax, "Shot Clock: %d:%02d");
+        shotClockBar.setVisible(true);
+    }
+    public void stopShotClock() {shotClock = -1;}
 }

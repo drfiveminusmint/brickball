@@ -19,6 +19,8 @@ defaultSettings:
   steaks: 8
   # Time in seconds to complete a match (-1 for no timer)
   timer: -1
+  # Time in seconds to get in the goal or die trying (-1 for no shot clock)
+  shotClock: -1
   # The amount of saturation given to each player upon respawning.
   saturation: 0.0
   # If this is set to true, players killed by the environment without being tagged will reset the brick to its original location.
