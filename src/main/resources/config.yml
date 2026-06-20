@@ -26,6 +26,9 @@ defaultSettings:
   # If this is set to true, players killed by the environment without being tagged will reset the brick to its original location.
   # This setting will always be treated as true if respawning is false, to prevent soft-locking.
   brickFumbling: false
+  # If this is set to true, players killed by the environment without being tagged will automatically turn over the brick to the opposing team
+  # Mutually exclusive with brickFumbling
+  deathTurnovers: false
   # Controls whether players will regenerate health on their own.
   naturalRegeneration: true
   # Controls whether players will respawn during the round.

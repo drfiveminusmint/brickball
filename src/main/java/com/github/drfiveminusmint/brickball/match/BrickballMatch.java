@@ -186,7 +186,7 @@ public class BrickballMatch implements ForwardingAudience {
                     playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
                     showTitle(Title.title(Component.text(String.valueOf(j)), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(400),Duration.ofMillis(200))));
                 }
-            }.runTaskLater(Brickball.getInstance(), 200 - 20L * j);
+            }.runTaskLater(Brickball.getInstance(), 160 - 20L * j);
         }
         new BukkitRunnable () {
             public void run () {
@@ -194,7 +194,7 @@ public class BrickballMatch implements ForwardingAudience {
                 showTitle(Title.title(Component.text("Round Start!"), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(200),Duration.ofMillis(200))));
                 arena.openDoors();
             }
-        }.runTaskLater(Brickball.getInstance(), 200);
+        }.runTaskLater(Brickball.getInstance(), 160);
     }
 
     public void checkScoring(Player player) {
@@ -447,21 +447,8 @@ public class BrickballMatch implements ForwardingAudience {
                         if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
                             player.getInventory().setItemInOffHand(null);
                         player.updateInventory();
-                        int reboundTeam = (teams[0].hasPlayer(player)) ? 1 : 0;
-                        // Notify players
-                        playSound(Sound.sound(Key.key("entity.blaze.death"), Sound.Source.BLOCK, 5f, 1F));
-                        sendMessage(Component.text("[Brickball] ").color(NamedTextColor.DARK_RED)
-                                .append(Component.text(teamNames[1-reboundTeam]).color(teamColors[1-reboundTeam].textColor))
-                                .append(Component.text(" has displeased the BRICK. It transfers itself to ").color(NamedTextColor.DARK_RED))
-                                .append(Component.text(teamNames[reboundTeam]).color(teamColors[reboundTeam].textColor))
-                                .append(Component.text("...").color(NamedTextColor.DARK_RED))
-                        );
-                        // Reset the round
-                        startRound();
-                        // Override brick spawn
-                        removeGroundEntities();
-                        Item brick = (Item) arena.getSpawnLocation(reboundTeam).getWorld().spawnEntity(arena.getSpawnLocation(reboundTeam), EntityType.ITEM);
-                        brick.setItemStack(new ItemStack(Material.BRICK, 1));
+                        // give the brick to the other team
+                        turnover(player);
                     }
                 stopShotClock();
             } else if (shotClock == 20) {
@@ -495,6 +482,32 @@ public class BrickballMatch implements ForwardingAudience {
                 }
             }.runTaskLater(Brickball.getInstance(), 200);
         }
+    }
+
+    // Signal to the match that the target player has turned the ball over
+    public void turnover(Player losingPlayer) {
+        int reboundTeam = (teams[0].hasPlayer(losingPlayer)) ? 1 : 0;
+        // Notify players
+        playSound(Sound.sound(Key.key("entity.blaze.death"), Sound.Source.BLOCK, 5f, 1F));
+        sendMessage(Component.text("[Brickball] ").color(NamedTextColor.DARK_RED)
+                .append(Component.text(teamNames[1-reboundTeam]).color(teamColors[1-reboundTeam].textColor))
+                .append(Component.text(" has displeased the BRICK. It transfers itself to ").color(NamedTextColor.DARK_RED))
+                .append(Component.text(teamNames[reboundTeam]).color(teamColors[reboundTeam].textColor))
+                .append(Component.text("...").color(NamedTextColor.DARK_RED))
+        );
+        // ensure the player's respawn location isn't accidentally reset
+        Location savedRespawnLocation = losingPlayer.getRespawnLocation();
+        sendMessage(Component.text(savedRespawnLocation.toString()));
+        // Reset the round
+        stopShotClock();
+        startRound();
+        losingPlayer.setRespawnLocation(savedRespawnLocation, true);
+        sendMessage(Component.text(savedRespawnLocation.toString()));
+        losingPlayer.teleport(savedRespawnLocation);
+        // Override brick spawn
+        removeGroundEntities();
+        Item brick = (Item) arena.getSpawnLocation(reboundTeam).getWorld().spawnEntity(arena.getSpawnLocation(reboundTeam), EntityType.ITEM);
+        brick.setItemStack(new ItemStack(Material.BRICK, 1));
     }
 
     @Override

@@ -8,7 +8,9 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
@@ -59,7 +61,7 @@ public class PlayerListener implements Listener {
             playerMatch.sendMessage(player.getKiller().displayName().append(Component.text(" has the BRICK!",NamedTextColor.WHITE)));
             // Start shot clock (if enabled)
             playerMatch.startShotClock();
-        } else if ((playerMatch.getSettings().getBoolean(MatchSettings.Setting.BRICK_FUMBLING) || !playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING))&& (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))) {
+        } else if ((playerMatch.getSettings().getBoolean(MatchSettings.Setting.BRICK_FUMBLING) || !playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))) {
             // Reset brick if fumbling is enabled or respawning is disabled
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
@@ -68,6 +70,23 @@ public class PlayerListener implements Listener {
                 player.getInventory().setItemInOffHand(null);
             playerMatch.spawnBrick();
             playerMatch.stopShotClock();
+        } else if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.DEATH_TURNOVERS) && player.getInventory().contains(Material.BRICK)) {
+            // Start a turnover if death turnovers is enabled
+            player.removePotionEffect(PotionEffectType.WEAKNESS);
+            player.setGlowing(false);
+            player.getInventory().remove(Material.BRICK);
+            if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                player.getInventory().setItemInOffHand(null);
+            // turn over the brick
+            final Location cachedLoc = player.getRespawnLocation();
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    player.teleport(cachedLoc);
+                }
+            }.runTaskLater(Brickball.getInstance(), 1);
+            playerMatch.turnover(player);
+            return;
         }
         if (player.getRespawnLocation() == null) Brickball.getInstance().getLogger().log(Level.SEVERE, "UH OH");
         if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0)

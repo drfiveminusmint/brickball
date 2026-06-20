@@ -3,9 +3,11 @@ package com.github.drfiveminusmint.brickball.match;
 import com.github.drfiveminusmint.brickball.Brickball;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
+import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.naming.Name;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +30,7 @@ public class MatchSettings {
         properties.put(Setting.TIMER, section.getInt("timer",-1));
         properties.put(Setting.SATURATION, section.getDouble("saturation", 0.0));
         properties.put(Setting.BRICK_FUMBLING, section.getBoolean("brickFumbling", false));
+        properties.put(Setting.DEATH_TURNOVERS, section.getBoolean("deathTurnovers", false));
         properties.put(Setting.NATURAL_REGENERATION, section.getBoolean("naturalRegeneration", true));
         properties.put(Setting.RESPAWNING, section.getBoolean("respawning", true));
     }
@@ -61,6 +64,7 @@ public class MatchSettings {
     public static class Setting {
         public static final NamespacedKey ARROWS = new NamespacedKey(Brickball.getPlugin(Brickball.class), "arrows");
         public static final NamespacedKey BRICK_FUMBLING = new NamespacedKey(Brickball.getPlugin(Brickball.class), "brickFumbling");
+        public static final NamespacedKey DEATH_TURNOVERS = new NamespacedKey(Brickball.getPlugin(Brickball.class), "deathTurnovers");
         public static final NamespacedKey NATURAL_REGENERATION = new NamespacedKey(Brickball.getPlugin(Brickball.class), "naturalRegeneration");
         public static final NamespacedKey RESPAWN_DELAY = new NamespacedKey(Brickball.getPlugin(Brickball.class), "respawnDelay");
         public static final NamespacedKey RESPAWNING = new NamespacedKey(Brickball.getPlugin(Brickball.class), "respawning");
@@ -70,7 +74,7 @@ public class MatchSettings {
         public static final NamespacedKey SHOT_CLOCK = new NamespacedKey(Brickball.getPlugin(Brickball.class), "shotClock");
         public static final NamespacedKey STEAKS = new NamespacedKey(Brickball.getPlugin(Brickball.class), "steaks");
 
-        public static final Set<NamespacedKey> keys = Set.of(ARROWS, BRICK_FUMBLING, NATURAL_REGENERATION, POINTS_TO_WIN, RESPAWN_DELAY, RESPAWNING, SATURATION, SHOT_CLOCK, STEAKS, TIMER);
+        public static final Set<NamespacedKey> keys = Set.of(ARROWS, BRICK_FUMBLING, DEATH_TURNOVERS, NATURAL_REGENERATION, POINTS_TO_WIN, RESPAWN_DELAY, RESPAWNING, SATURATION, SHOT_CLOCK, STEAKS, TIMER);
         @Nullable public static NamespacedKey getKey(@NotNull String string) {
             for (NamespacedKey key : keys)
                 if (key.getKey().equalsIgnoreCase(string)) return key;
