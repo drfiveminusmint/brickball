@@ -451,16 +451,18 @@ public class BrickballMatch implements ForwardingAudience {
                         if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
                             player.getInventory().setItemInOffHand(null);
                         player.updateInventory();
+                        player.clearActivePotionEffects();
+                        player.setGlowing(false);
                         // give the brick to the other team
                         turnover(player);
                     }
                 stopShotClock();
             } else if (shotClock == 20) {
                 // Warn the players
-                playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
+                playSound(Sound.sound(Key.key("entity.warden.nearby_closest"), Sound.Source.BLOCK, 5f, 1F));
                 sendMessage(Component.text("[Brickball] The BRICK grows impatient! Attempt to score within the next 20 seconds! Or else...").color(NamedTextColor.DARK_RED));
             } else if (shotClock <= 5) {
-                playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
+                playSound(Sound.sound(Key.key("entity.warden.heartbeat"), Sound.Source.BLOCK, 5f, 1F));
             }
         } else {
             // don't display shot clock bar if invisible
@@ -492,7 +494,7 @@ public class BrickballMatch implements ForwardingAudience {
     public void turnover(Player losingPlayer) {
         int reboundTeam = (teams[0].hasPlayer(losingPlayer)) ? 1 : 0;
         // Notify players
-        playSound(Sound.sound(Key.key("entity.blaze.death"), Sound.Source.BLOCK, 5f, 1F));
+        playSound(Sound.sound(Key.key("entity.warden.death"), Sound.Source.BLOCK, 5f, 1F));
         sendMessage(Component.text("[Brickball] ").color(NamedTextColor.DARK_RED)
                 .append(Component.text(teamNames[1-reboundTeam]).color(teamColors[1-reboundTeam].textColor))
                 .append(Component.text(" has displeased the BRICK. It transfers itself to ").color(NamedTextColor.DARK_RED))
