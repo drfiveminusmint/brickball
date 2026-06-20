@@ -382,7 +382,11 @@ public class BrickballMatch implements ForwardingAudience {
         swordMeta.setUnbreakable(true);
         sword.setItemMeta(swordMeta);
         inventory.addItem(sword);
-        inventory.addItem(new ItemStack(Material.CROSSBOW));
+        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
+        ItemMeta crossbowMeta = crossbow.getItemMeta();
+        crossbowMeta.setUnbreakable(true);
+        crossbow.setItemMeta(crossbowMeta);
+        inventory.addItem(crossbow);
         player.updateInventory(); // this needs to run for the inventory changes to apply
     }
     private void cleanupPlayer(Player player) {
