@@ -497,12 +497,10 @@ public class BrickballMatch implements ForwardingAudience {
         );
         // ensure the player's respawn location isn't accidentally reset
         Location savedRespawnLocation = losingPlayer.getRespawnLocation();
-        sendMessage(Component.text(savedRespawnLocation.toString()));
         // Reset the round
         stopShotClock();
         startRound();
         losingPlayer.setRespawnLocation(savedRespawnLocation, true);
-        sendMessage(Component.text(savedRespawnLocation.toString()));
         losingPlayer.teleport(savedRespawnLocation);
         // Override brick spawn
         removeGroundEntities();
