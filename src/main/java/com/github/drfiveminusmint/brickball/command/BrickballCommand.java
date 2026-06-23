@@ -4,7 +4,6 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
-import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
@@ -18,7 +17,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -118,7 +116,7 @@ public class BrickballCommand implements TabExecutor {
         ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[1]);
         if (template == null) {
             player.sendMessage(String.format("Couldn't find arena template: %s", args[1]));
-
+            return true;
         }
         BrickballMatch newMatch = Brickball.getInstance().getMatchManager().startMatch(template, 10);
         if (newMatch == null) {
@@ -131,6 +129,7 @@ public class BrickballCommand implements TabExecutor {
                 .append(Component.text(args[1], NamedTextColor.YELLOW)).append(Component.text(". ", NamedTextColor.GOLD))
                 .append(Component.text("Click to join!", NamedTextColor.AQUA)).clickEvent(ClickEvent.runCommand("/brickball join " + player.getName())));
         Brickball.getInstance().getMatchManager().joinMatch(player, newMatch);
+        player.sendMessage(Component.text("[Start Match]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball start")));
         return true;
     }
 
@@ -253,7 +252,7 @@ public class BrickballCommand implements TabExecutor {
 
     public boolean mapCommand(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("Usage: /brickball map (save/list)");
+            player.sendMessage("Usage: /brickball map (save/delete/list)");
             return true;
         }
         if (args[1].equalsIgnoreCase("list")) {
@@ -263,26 +262,44 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if (args.length < 3) {
-            player.sendMessage("Usage: /brickball map create (id)");
+            player.sendMessage("Usage: /brickball map save/delete (id)");
             return true;
         }
         if (args[1].equalsIgnoreCase("save")) {
             if (!player.hasPermission("brickball.map.save")) return insufficientPermissions(player);
             TemplateManager manager = Brickball.getInstance().getTemplateManager();
-            ArenaTemplate newTempate;
+            ArenaTemplate newTemplate;
             try {
-                newTempate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()), true);
+                newTemplate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()), true);
             } catch (Exception ex) {
                 player.sendMessage(Component.text("Error saving map.", NamedTextColor.RED));
                 return true;
             }
-            if (manager.findTemplate(args[2]) != null)
-                manager.deleteTemplate(args[2]);
-            manager.registerTemplate(newTempate);
+            // flush all running instances of this map
+            Brickball.getInstance().getMatchManager().flushMatches(args[2]);
+            // Template Manager handles creation logic
+            manager.registerTemplate(newTemplate);
             player.sendMessage("Map creation successful!");
             return true;
+        } else if (args[1].equalsIgnoreCase("delete")) {
+            if (!player.hasPermission("brickball.map.delete")) return insufficientPermissions(player);
+            ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[2]);
+            if (template == null) {
+                player.sendMessage(String.format("Couldn't find arena template: %s", args[2]));
+                return true;
+            }
+            BrickballMatch match;
+            // flush all running instances of this map
+            Brickball.getInstance().getMatchManager().flushMatches(args[2]);
+            // Template manager handles deletion logic
+            if (Brickball.getInstance().getTemplateManager().deleteTemplate(template))
+                player.sendMessage(String.format("Deleting arena template: %s", args[2]));
+            else
+                player.sendMessage(Component.text("Error deleting map.", NamedTextColor.RED));
+            return true;
         }
-        player.sendMessage("Usage: /brickball map (create/list)");
+
+        player.sendMessage("Usage: /brickball map (save/delete/list)");
         return true;
     }
 
@@ -309,7 +326,12 @@ public class BrickballCommand implements TabExecutor {
             return result;
         }
         if (args[0].equalsIgnoreCase("create")) return Brickball.getInstance().getTemplateManager().listTemplateIDs();
-        if (args[0].equalsIgnoreCase("map")) return List.of("save", "list");
+        if (args[0].equalsIgnoreCase("map")) {
+            if (args.length == 2)
+                return List.of("save", "delete", "list");
+            if (args[1].equalsIgnoreCase("delete"))
+                return Brickball.getInstance().getTemplateManager().listTemplateIDs();
+        }
         if (args[0].equalsIgnoreCase("jointeam")) return List.of("1", "2", "3");
         if (args[0].equalsIgnoreCase("teamColor")) {
             if (args.length == 2) return List.of("1", "2");
@@ -356,7 +378,8 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if (match.pause()) {
-            player.sendMessage("[Brickball] Match paused.");
+            player.sendMessage(Component.text("[Brickball] Match paused. ", NamedTextColor.WHITE)
+                    .append(Component.text("Click here to unpause.", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball unpause"))));
         } else {
             player.sendMessage("Could not pause match: The match is not currently running!");
         }

@@ -1,6 +1,7 @@
 package com.github.drfiveminusmint.brickball.arena;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.scheduling.DeleteTemplateFilesTask;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -17,13 +18,11 @@ import java.util.logging.Level;
 public class TemplateManager {
     public ConcurrentHashMap<String, ArenaTemplate> templates = new ConcurrentHashMap<>();
     public boolean registerTemplate(ArenaTemplate template) {
+        templates.remove(template.getID());
         if (templates.contains(template)) return false;
         templates.put(template.getID(), template);
         saveTemplateToFile(template);
         return true;
-    }
-    public boolean deleteTemplate(String id) {
-        return templates.remove(id) == null;
     }
     @Nullable
     public ArenaTemplate findTemplate (String id) {
@@ -83,6 +82,13 @@ public class TemplateManager {
             Brickball.getInstance().getLogger().log(Level.SEVERE,"Error saving template " + template.getID());
             return false;
         }
+        return true;
+    }
+
+    public boolean deleteTemplate(ArenaTemplate template) {
+        if (template == null) return false;
+        if (templates.remove(template.getID()) == null) return false;
+        Brickball.getInstance().getScheduler().submitTask(new DeleteTemplateFilesTask(template));
         return true;
     }
 }

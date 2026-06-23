@@ -6,10 +6,6 @@ depend: [WorldEdit, WorldGuard]
 softdepend: [Multiverse-Core]
 api-version: '1.21'
 commands:
-  brickballtest:
-    description: brick.
-    permission: brickball.debug
-    usage: /brickballtest (create/test) (id)
   brickball:
     aliases: [bb]
     description: brick.
@@ -26,6 +22,9 @@ permissions:
     default: true
   brickball.map.create:
     description: Allows the user to save Brickball maps.
+    default: op
+  brickball.map.delete:
+    description: Allows the user to delete Brickball maps.
     default: op
   brickball.map.list:
     description: Allows the user to list saved Brickball maps.

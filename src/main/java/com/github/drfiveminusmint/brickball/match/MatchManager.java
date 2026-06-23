@@ -57,15 +57,6 @@ public class MatchManager {
         return null;
     }
 
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public BrickballMatch auto(Player player) {
-        BrickballMatch match = getMatch(MatchState.PREPARING, null);
-        if (!match.joinMatch(player)) return null;
-        activePlayersMap.put(player,match);
-        return match;
-    }
-
     @Nullable
     public BrickballMatch getMatchByPlayer(Player player) {
         return activePlayersMap.get(player);
@@ -91,10 +82,27 @@ public class MatchManager {
             Brickball.getInstance().getScheduler().submitTask(new ArenaRestockingTask(matches, Brickball.getInstance().getTemplateManager().templates.keySet()));
         return newMatch;
     }
+
+    // Shutdown all matches using a certain template and force cleanup
+    // Because arenas use lazy cleanup usually, this is needed to make live changes to templates
+    public synchronized void flushMatches(String templateID) {
+        for (BrickballMatch match : matches) {
+            if (match == null) continue;
+            if (!match.getMapID().equalsIgnoreCase(templateID)) continue;
+            endMatch(match, true);
+        }
+    }
+
     public void endMatch(BrickballMatch match) {
+        endMatch(match, false);
+    }
+
+    // if forceCleanup is true, the map will always be cleaned up when the match is ended
+    // otherwise standard freezing logic applies
+    public void endMatch(BrickballMatch match, boolean forceCleanup) {
         for (Audience audience : match.audiences())
             activePlayersMap.remove((Player) audience);
-        if (currentMatchID <= MAX_MATCHES>>1)
+        if ((currentMatchID <= MAX_MATCHES>>1) && !forceCleanup)
             match.freeze();
         else {
             match.shutdown();

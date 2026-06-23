@@ -54,7 +54,6 @@ public class WGUtils {
                 subRegions.add(new CuboidRegion(
                         new BlockVector3(minX + i*16, source.getMinimumPoint().y(), minZ+j*16),
                         new BlockVector3(Math.min(minX + i*16+16, maxX), source.getMaximumPoint().y(), Math.min( minZ+j*16+16, maxZ))));
-        Brickball.getInstance().getLogger().log(Level.INFO, "Regions: " + subRegions);
         return subRegions;
 
     }

@@ -23,6 +23,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -226,6 +228,12 @@ public class BrickballMatch implements ForwardingAudience {
                 }
     }
 
+    public void checkDeathRegions(Player player) {
+        if (arena.checkLocationInDeathRegion(player.getLocation()) || !arena.checkLocationInbounds(player.getLocation())) {
+            player.damage(999, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
+        }
+    }
+
     public void spawnBrick() {
         Location brickSpawn = arena.getBrickSpawn();
         Item brick = (Item) brickSpawn.getWorld().spawnEntity(brickSpawn, EntityType.ITEM);
@@ -261,14 +269,16 @@ public class BrickballMatch implements ForwardingAudience {
         for (Team team : teams)
             team.removePlayer(player);
         // Don't take the brick with you when leaving
-        if (player.getInventory().contains(Material.BRICK))
+        if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
             spawnBrick();
         cleanupPlayer(player);
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" left the match.")));
         if (players.remove(player)) {
             if (host.equals(player)) {
-                if (!players.isEmpty())
+                if (!players.isEmpty()) {
                     host = (Player) players.toArray()[0];
+                    host.sendMessage(Component.text("[Brickball] You are now the host."));
+                }
                 else
                     host = null;
             }
@@ -452,7 +462,6 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void tickTimer() {
-        if (!state.equals(MatchState.RUNNING)) return;
         // shotClockMax = 0 indicates the shot clock is disabled, shotClock = -1 indicates it is not running
         if (shotClockMax > 0 && shotClock != -1) {
             // Shotclock is enabled and active
@@ -548,13 +557,19 @@ public class BrickballMatch implements ForwardingAudience {
     public boolean pause() {
         if (state != MatchState.RUNNING) return false;
         state = MatchState.PAUSED;
-        for (Player player : players)
+        for (Player player : players) {
             player.setGameMode(GameMode.SPECTATOR);
+            // Don't let players keep the brick through pauses
+            player.getInventory().remove(Material.BRICK);
+            if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                player.getInventory().setItemInOffHand(null);
+        }
         return true;
     }
 
     public boolean unpause () {
         if (state != MatchState.PAUSED) return false;
+        state = MatchState.RUNNING;
         startRound();
         return true;
     }

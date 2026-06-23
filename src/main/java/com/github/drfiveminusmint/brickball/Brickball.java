@@ -3,7 +3,6 @@ package com.github.drfiveminusmint.brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.command.BrickballCommand;
-import com.github.drfiveminusmint.brickball.command.BrickballTestCommand;
 import com.github.drfiveminusmint.brickball.listener.PlayerListener;
 import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
@@ -56,7 +55,6 @@ public final class Brickball extends JavaPlugin {
         {
             getLogger().log(Level.WARNING, "No default world for Brickball found! Define one with /brickball setworld");
         }
-        getCommand("brickballtest").setExecutor(new BrickballTestCommand());
         getCommand("brickball").setExecutor(new BrickballCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 

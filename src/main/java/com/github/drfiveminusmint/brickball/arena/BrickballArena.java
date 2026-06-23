@@ -27,12 +27,14 @@ import org.bukkit.Location;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 
 public class BrickballArena {
     private final ProtectedRegion masterRegion, spawnA, doorA,spawnB, doorB;
+    private final HashSet<ProtectedRegion> deathRegions;
     private final World gameWorld;
     private final Location[] spawnLocations = new Location[2];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
@@ -52,6 +54,9 @@ public class BrickballArena {
         spawnB = WGUtils.cloneRegionBetweenWorlds(template.getSpawnB(), String.format("spawnb%d", matchID), gameWorld, offset);
         spawnLocations[1] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnB), gameWorld);
         doorB = WGUtils.cloneRegionBetweenWorlds(template.getDoorB(), String.format("doorb%d", matchID), gameWorld, offset);
+        deathRegions = new HashSet<>();
+        for (ProtectedRegion region : template.getDeathRegions())
+            deathRegions.add(WGUtils.cloneRegionBetweenWorlds(region, String.format("%s%d", region.getId(), matchID), gameWorld, offset));
         brickSpawn = new Location(minPoint.getWorld(), template.getBrickSpawn().x()+(offset.x()*1.0d), template.getBrickSpawn().y()+0.1+(offset.y()*1.0d), template.getBrickSpawn().z()+(offset.z()*1.0d));
         templateID = template.getID();
     }
@@ -75,20 +80,24 @@ public class BrickballArena {
         }
     }
 
-
+    // Deconstruct the physical map and remove all regions
     public void cleanupArena() {
-        Brickball.getInstance().getLogger().log(Level.SEVERE, "Cleaning Up");
+        Brickball.getInstance().getLogger().log(Level.INFO, "Cleaning Up");
         RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(gameWorld);
         manager.removeRegion(masterRegion.getId());
         manager.removeRegion(spawnA.getId());
         manager.removeRegion(doorA.getId());
         manager.removeRegion(spawnB.getId());
         manager.removeRegion(doorB.getId());
+        for (ProtectedRegion region : deathRegions)
+            manager.removeRegion(region.getId());
+        // Prevent overwhelming the server by removing the map chunk-by-chunk
         for (CuboidRegion chunk : WGUtils.subdivideCuboidRegion(WorldEditRegionConverter.convertToRegion(masterRegion))) {
             Brickball.getInstance().getScheduler().submitTask(new RegionCleanupTask(chunk, gameWorld, 0));
         }
     }
 
+    // Utility function to open the doors at the start of the round
     public void openDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
@@ -100,6 +109,7 @@ public class BrickballArena {
         }
     }
 
+    // Utility function to close the doors at the start of the round
     public void closeDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
@@ -115,12 +125,21 @@ public class BrickballArena {
         setTeamColor(teamColors[1], 1);
     }
 
+    // Check if a location is within the specified team's spawnpoint
     public boolean checkLocationInSpawn(Location location, int team) {
         return switch (team) {
             case 0 -> spawnA.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
             case 1 -> spawnB.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
             default -> false;
         };
+    }
+
+    // Check if a location is within one of the specified kill-regions on this map
+    public boolean checkLocationInDeathRegion(Location location) {
+        for (ProtectedRegion region : deathRegions)
+            if (region.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ())))
+                return true;
+        return false;
     }
 
     public boolean checkLocationInbounds(Location location) {

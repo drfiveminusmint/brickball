@@ -20,15 +20,18 @@ import org.bukkit.Location;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 public class ArenaTemplate {
     private final ProtectedRegion masterRegion, spawnA, doorA, spawnB, doorB;
+    private final HashSet<ProtectedRegion> deathRegions;
     private final Location brickSpawn;
     private final String ID;
 
 
-    public ArenaTemplate (String id, ProtectedRegion masterRegion, ProtectedRegion doorA, ProtectedRegion spawnA, ProtectedRegion doorB, ProtectedRegion spawnB, Location brickSpawn) {
+    public ArenaTemplate (String id, ProtectedRegion masterRegion, ProtectedRegion doorA, ProtectedRegion spawnA, ProtectedRegion doorB, ProtectedRegion spawnB, HashSet<ProtectedRegion> deathRegions, Location brickSpawn) {
         this.ID = id;
         this.masterRegion = masterRegion;
         this.doorA = doorA;
@@ -36,16 +39,25 @@ public class ArenaTemplate {
         this.doorB = doorB;
         this.spawnB = spawnB;
         this.brickSpawn = brickSpawn;
+        this.deathRegions = deathRegions;
     }
 
     public static ArenaTemplate createByID(String id, Location spawnLoc, World world, boolean addSchem) {
         RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(world);
+        ProtectedRegion masterRegion = manager.getRegion(id+"Master");
+        HashSet<ProtectedRegion> dregions = new HashSet<>();
+        for (ProtectedRegion region : manager.getApplicableRegions(masterRegion))
+        {
+            if (masterRegion.equals(region.getParent()) && region.getId().contains("death"))
+                dregions.add(region);
+        }
         ArenaTemplate result = new ArenaTemplate(id,
-                manager.getRegion(id+"Master"),
+                masterRegion,
                 manager.getRegion(id+"DoorA"),
                 manager.getRegion(id+"SpawnA"),
                 manager.getRegion(id+"DoorB"),
                 manager.getRegion(id+"SpawnB"),
+                dregions,
                 spawnLoc);
         if (addSchem)
             result.saveSchematic(world);
@@ -86,5 +98,9 @@ public class ArenaTemplate {
     }
     public Location getBrickSpawn() {
         return brickSpawn;
+    }
+
+    public HashSet<ProtectedRegion> getDeathRegions() {
+        return deathRegions;
     }
 }
