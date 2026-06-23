@@ -12,6 +12,7 @@ import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -55,6 +56,7 @@ public class BrickballMatch implements ForwardingAudience {
     private final BossBar timerBar = Bukkit.createBossBar("", BarColor.YELLOW, BarStyle.SEGMENTED_20);
     private final BossBar shotClockBar = Bukkit.createBossBar("", BarColor.RED, BarStyle.SEGMENTED_10);
     private final BrickballArena arena;
+    private Player host = null;
     private final MatchSettings settings = new MatchSettings();
     private TimerUpdateHelper timeHelper = new TimerUpdateHelper(this);
 
@@ -237,6 +239,7 @@ public class BrickballMatch implements ForwardingAudience {
 
     public boolean joinMatch(Player player) {
         teams[teams.length-1].addPlayer(player);
+        if (host == null) host = player;
         players.add(player);
         player.setScoreboard(scoreboard);
         // If it's already in progress, they need to be put into spectator mode.
@@ -249,6 +252,8 @@ public class BrickballMatch implements ForwardingAudience {
                 shotClockBar.addPlayer(player);
         }
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" joined the match.")));
+        player.sendMessage(Component.text("[Join Team 1]", teamColors[0].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 1")));
+        player.sendMessage(Component.text("[Join Team 2]", teamColors[1].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 2")));
         return true;
     }
 
@@ -260,7 +265,16 @@ public class BrickballMatch implements ForwardingAudience {
             spawnBrick();
         cleanupPlayer(player);
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" left the match.")));
-        return players.remove(player);
+        if (players.remove(player)) {
+            if (host.equals(player)) {
+                if (!players.isEmpty())
+                    host = (Player) players.toArray()[0];
+                else
+                    host = null;
+            }
+            return true;
+        }
+        return false;
     }
     public boolean joinTeam(Player player, int teamID) {
         if (!players.contains(player))
@@ -322,6 +336,7 @@ public class BrickballMatch implements ForwardingAudience {
             cleanupPlayer(player);
         }
         players.clear();
+        host = null;
         // reset scores
         matchScoreObjective.getScore(teamNames[0]).setScore(0);
         matchScoreObjective.getScore(teamNames[1]).setScore(0);
@@ -437,8 +452,9 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void tickTimer() {
+        if (!state.equals(MatchState.RUNNING)) return;
         // shotClockMax = 0 indicates the shot clock is disabled, shotClock = -1 indicates it is not running
-        if ((shotClockMax > 0) && (shotClock != -1) && state.equals(MatchState.RUNNING)) {
+        if (shotClockMax > 0 && shotClock != -1) {
             // Shotclock is enabled and active
             shotClockBar.setVisible(true);
             updateBossBar(shotClockBar, shotClockMax - (--shotClock), shotClockMax, "Shot Clock: %d:%02d");
@@ -459,10 +475,10 @@ public class BrickballMatch implements ForwardingAudience {
                 stopShotClock();
             } else if (shotClock == 20) {
                 // Warn the players
-                playSound(Sound.sound(Key.key("entity.warden.nearby_closest"), Sound.Source.BLOCK, 5f, 1F));
+                playSound(Sound.sound(Key.key("entity.warden.nearby_closest"), Sound.Source.BLOCK, 10f, 1F));
                 sendMessage(Component.text("[Brickball] The BRICK grows impatient! Attempt to score within the next 20 seconds! Or else...").color(NamedTextColor.DARK_RED));
             } else if (shotClock <= 5) {
-                playSound(Sound.sound(Key.key("entity.warden.heartbeat"), Sound.Source.BLOCK, 5f, 1F));
+                playSound(Sound.sound(Key.key("entity.warden.heartbeat"), Sound.Source.BLOCK, 10f, 1F));
             }
         } else {
             // don't display shot clock bar if invisible
@@ -494,7 +510,7 @@ public class BrickballMatch implements ForwardingAudience {
     public void turnover(Player losingPlayer) {
         int reboundTeam = (teams[0].hasPlayer(losingPlayer)) ? 1 : 0;
         // Notify players
-        playSound(Sound.sound(Key.key("entity.warden.death"), Sound.Source.BLOCK, 5f, 1F));
+        playSound(Sound.sound(Key.key("entity.warden.death"), Sound.Source.BLOCK, 10f, 1F));
         sendMessage(Component.text("[Brickball] ").color(NamedTextColor.DARK_RED)
                 .append(Component.text(teamNames[1-reboundTeam]).color(teamColors[1-reboundTeam].textColor))
                 .append(Component.text(" has displeased the BRICK. It transfers itself to ").color(NamedTextColor.DARK_RED))
@@ -529,7 +545,19 @@ public class BrickballMatch implements ForwardingAudience {
     public MatchState getState() {return state;}
     public String getMapID() {return arena.getTemplateID();}
 
-    public void pause() {state = MatchState.PAUSED;}
+    public boolean pause() {
+        if (state != MatchState.RUNNING) return false;
+        state = MatchState.PAUSED;
+        for (Player player : players)
+            player.setGameMode(GameMode.SPECTATOR);
+        return true;
+    }
+
+    public boolean unpause () {
+        if (state != MatchState.PAUSED) return false;
+        startRound();
+        return true;
+    }
     public void startShotClock() {
         if (shotClockMax <= 0) return;
         shotClock = shotClockMax;
@@ -537,4 +565,6 @@ public class BrickballMatch implements ForwardingAudience {
         shotClockBar.setVisible(true);
     }
     public void stopShotClock() {shotClock = -1;}
+
+    public boolean getIsHost(Player other) {return other.equals(host);}
 }

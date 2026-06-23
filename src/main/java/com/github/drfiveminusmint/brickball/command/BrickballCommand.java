@@ -9,6 +9,8 @@ import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -16,6 +18,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +34,7 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start)");
+            player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start/pause/unpause)");
             return true;
         }
         if (args[0].equalsIgnoreCase("join")) return joinCommand(player, args);
@@ -44,6 +47,8 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("setting")) return settingCommand(player, args);
         if (args[0].equalsIgnoreCase("setworld")) return setWorldCommand(player, args);
         if (args[0].equalsIgnoreCase("admin")) return adminCommand(player, args);
+        if (args[0].equalsIgnoreCase("pause")) return pauseCommand(player, args);
+        if (args[0].equalsIgnoreCase("unpause")) return unpauseCommand(player, args);
         return false;
     }
 
@@ -120,6 +125,11 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("Error creating match!");
             return true;
         }
+        Bukkit.getServer().broadcast(Component.text("[Brickball] ", NamedTextColor.GOLD)
+                .append(player.displayName())
+                .append(Component.text(" has created a match on ", NamedTextColor.GOLD))
+                .append(Component.text(args[1], NamedTextColor.YELLOW)).append(Component.text(". ", NamedTextColor.GOLD))
+                .append(Component.text("Click to join!", NamedTextColor.AQUA)).clickEvent(ClickEvent.runCommand("/brickball join " + player.getName())));
         Brickball.getInstance().getMatchManager().joinMatch(player, newMatch);
         return true;
     }
@@ -130,14 +140,18 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("Usage: /brickball join (user)");
             return true;
         }
+        if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) != null) {
+            player.sendMessage(Component.text("You're already in a brickball match!", NamedTextColor.RED));
+            return true;
+        }
         Player otherPlayer = Bukkit.getPlayer(args[1]);
         if (otherPlayer == null) {
-            player.sendMessage(String.format("Player %s not found.", args[1]));
+            player.sendMessage(Component.text(String.format("Player %s not found.", args[1]), NamedTextColor.RED));
             return true;
         }
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(otherPlayer);
         if (match == null) {
-            player.sendMessage(String.format("Player %s has no active Brickball match you can join.", args[1]));
+            player.sendMessage(Component.text(String.format("Player %s has no active Brickball match you can join.", args[1]), NamedTextColor.RED));
             return true;
         }
         Brickball.getInstance().getMatchManager().joinMatch(player, match);
@@ -149,14 +163,14 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("You have left the match.");
             return true;
         }
-        player.sendMessage("You're not in a Brickball match.");
+        player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
         return true;
     }
 
     public boolean teamCommand(Player player, String[] args) {
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
             return true;
         }
         if (args.length < 2) {
@@ -165,11 +179,11 @@ public class BrickballCommand implements TabExecutor {
         }
         try {
             if (!match.joinTeam(player, Integer.parseInt(args[1]) - 1)) {
-                player.sendMessage("Error joining team.");
+                player.sendMessage(Component.text("Error joining team.", NamedTextColor.RED));
                 return true;
             }
         } catch (Exception e) {
-            player.sendMessage("Error joining team.");
+            player.sendMessage(Component.text("Error joining team.", NamedTextColor.RED));
             return true;
         }
         return true;
@@ -182,12 +196,16 @@ public class BrickballCommand implements TabExecutor {
         }
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
+            return true;
+        }
+        if (!match.getIsHost(player)) {
+            player.sendMessage(Component.text("Only the host can change match settings.", NamedTextColor.RED));
             return true;
         }
         NamespacedKey key = MatchSettings.Setting.getKey(args[1]);
         if (key == null) {
-            player.sendMessage("Unknown match setting: " + args[1]);
+            player.sendMessage(Component.text("Unknown match setting: " + args[1], NamedTextColor.RED));
             return true;
         }
         Object value = match.getSettings().get(key);
@@ -201,7 +219,7 @@ public class BrickballCommand implements TabExecutor {
                     int i = Integer.parseInt(args[2]);
                     match.getSettings().set(key, i);
                 } catch (NumberFormatException exception) {
-                    player.sendMessage("Could not parse argument: " + args[2]);
+                    player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
                 }
             }
@@ -210,7 +228,7 @@ public class BrickballCommand implements TabExecutor {
                     double d = Double.parseDouble(args[2]);
                     match.getSettings().set(key, d);
                 } catch (NumberFormatException exception) {
-                    player.sendMessage("Could not parse argument: " + args[2]);
+                    player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
                 }
             }
@@ -219,13 +237,13 @@ public class BrickballCommand implements TabExecutor {
                     boolean b = Boolean.parseBoolean(args[2]);
                     match.getSettings().set(key, b);
                 } catch (NumberFormatException exception) {
-                    player.sendMessage("Could not parse argument: " + args[2]);
+                    player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
                 }
             }
             case null, default -> {
-                player.sendMessage("Couldn't set match setting. This usually indicates a bug in the plugin. Contact the developer and show them this error:");
-                player.sendMessage("Couldn't edit match setting of type " + value.getClass().getName());
+                player.sendMessage(Component.text("Couldn't set match setting. This usually indicates a bug in the plugin. Contact the developer and show them this error:", NamedTextColor.DARK_RED));
+                player.sendMessage(Component.text("Couldn't edit match setting of type " + value.getClass().getName(), NamedTextColor.DARK_RED));
                 return true;
             }
         }
@@ -255,7 +273,7 @@ public class BrickballCommand implements TabExecutor {
             try {
                 newTempate = ArenaTemplate.createByID(args[2], player.getLocation(), new BukkitWorld(player.getWorld()), true);
             } catch (Exception ex) {
-                player.sendMessage("Error saving map.");
+                player.sendMessage(Component.text("Error saving map.", NamedTextColor.RED));
                 return true;
             }
             if (manager.findTemplate(args[2]) != null)
@@ -271,13 +289,13 @@ public class BrickballCommand implements TabExecutor {
     public boolean startCommand(Player player) {
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
             return true;
         }
         if (match.startMatch()) {
             player.sendMessage("Match starting! Please wait...");
         } else {
-            player.sendMessage("Error starting match.");
+            player.sendMessage(Component.text("Error starting match.", NamedTextColor.RED));
         }
         return true;
     }
@@ -303,7 +321,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of("create", "join", "jointeam", "leave", "map", "start", "teamcolor", "setting", "setworld");
+        if (args.length == 1) return List.of("create", "join", "jointeam", "leave", "map", "start", "teamcolor", "setting", "setworld", "admin", "pause", "unpause");
         return null;
     }
 
@@ -327,8 +345,44 @@ public class BrickballCommand implements TabExecutor {
         return true;
     }
 
+    public boolean pauseCommand(Player player, String[] args) {
+        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
+        if (match == null) {
+            player.sendMessage("You're not in a Brickball match.");
+            return true;
+        }
+        if (!match.getIsHost(player)) {
+            player.sendMessage(Component.text("Only the host can pause the match.", NamedTextColor.RED));
+            return true;
+        }
+        if (match.pause()) {
+            player.sendMessage("[Brickball] Match paused.");
+        } else {
+            player.sendMessage("Could not pause match: The match is not currently running!");
+        }
+        return true;
+    }
+
+    public boolean unpauseCommand(Player player, String[] args) {
+        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
+        if (match == null) {
+            player.sendMessage("You're not in a Brickball match.");
+            return true;
+        }
+        if (!match.getIsHost(player)) {
+            player.sendMessage(Component.text("Only the host can unpause the match.", NamedTextColor.RED));
+            return true;
+        }
+        if (match.unpause()) {
+            player.sendMessage("[Brickball] Match unpaused.");
+        } else {
+            player.sendMessage("Could not unpause match: The match is not currently paused!");
+        }
+        return true;
+    }
+
     private boolean insufficientPermissions(Player player) {
-        player.sendMessage("Insufficient Permissions");
+        player.sendMessage(Component.text("Insufficient Permissions", NamedTextColor.RED));
         return true;
     }
 }

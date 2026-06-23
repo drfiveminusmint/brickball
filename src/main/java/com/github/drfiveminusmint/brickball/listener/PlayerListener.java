@@ -3,6 +3,7 @@ package com.github.drfiveminusmint.brickball.listener;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import com.github.drfiveminusmint.brickball.match.MatchState;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -95,6 +96,7 @@ public class PlayerListener implements Listener {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    if (playerMatch.getState().equals(MatchState.PAUSED)) return;
                     player.setGameMode(GameMode.ADVENTURE);
                     player.teleport(player.getRespawnLocation());
                     player.heal(20);
