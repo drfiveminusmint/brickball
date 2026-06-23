@@ -329,7 +329,7 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("map")) {
             if (args.length == 2)
                 return List.of("save", "delete", "list");
-            if (args[1].equalsIgnoreCase("delete"))
+            if (args.length > 2 && args[1].equalsIgnoreCase("delete"))
                 return Brickball.getInstance().getTemplateManager().listTemplateIDs();
         }
         if (args[0].equalsIgnoreCase("jointeam")) return List.of("1", "2", "3");
