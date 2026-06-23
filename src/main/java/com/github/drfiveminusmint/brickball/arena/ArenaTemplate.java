@@ -46,11 +46,12 @@ public class ArenaTemplate {
         RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(world);
         ProtectedRegion masterRegion = manager.getRegion(id+"Master");
         HashSet<ProtectedRegion> dregions = new HashSet<>();
-        for (ProtectedRegion region : manager.getApplicableRegions(masterRegion))
-        {
-            if (masterRegion.equals(region.getParent()) && region.getId().contains("death"))
-                dregions.add(region);
-        }
+        if (masterRegion == null)
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "ERROR: Malformed arena template at ID: " + id);
+        else
+            for (ProtectedRegion region : manager.getApplicableRegions(masterRegion))
+                if (masterRegion.equals(region.getParent()) && region.getId().contains("death"))
+                    dregions.add(region);
         ArenaTemplate result = new ArenaTemplate(id,
                 masterRegion,
                 manager.getRegion(id+"DoorA"),
