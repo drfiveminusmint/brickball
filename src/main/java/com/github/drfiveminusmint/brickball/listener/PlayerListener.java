@@ -34,11 +34,10 @@ public class PlayerListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
-        if (playerMatch == null) return;
+        if (playerMatch == null || !player.getGameMode().equals(GameMode.ADVENTURE)) return;
         playerMatch.checkDeathRegions(player);
-        if (player.getInventory().contains(Material.BRICK) && player.getGameMode().equals(GameMode.ADVENTURE)) {
+        if (player.getInventory().contains(Material.BRICK))
             playerMatch.checkScoring(player);
-        }
     }
 
     @EventHandler
