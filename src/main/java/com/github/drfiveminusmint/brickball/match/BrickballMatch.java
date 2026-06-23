@@ -153,6 +153,7 @@ public class BrickballMatch implements ForwardingAudience {
                 player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
                 player.setFireTicks(0);
                 player.clearActivePotionEffects();
+                player.setGlowing(false);
                 // Give steaks and arrows
                 if (settings.getInt(MatchSettings.Setting.STEAKS) > 0) {
                     player.getInventory().remove(Material.COOKED_BEEF);
