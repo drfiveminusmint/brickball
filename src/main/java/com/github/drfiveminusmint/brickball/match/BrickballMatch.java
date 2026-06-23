@@ -558,6 +558,9 @@ public class BrickballMatch implements ForwardingAudience {
     public boolean pause() {
         if (state != MatchState.RUNNING) return false;
         state = MatchState.PAUSED;
+        sendMessage(Component.text("[Brickball] ", NamedTextColor.WHITE)
+                .append(host.displayName())
+                .append(Component.text("has paused the game", NamedTextColor.WHITE)));
         for (Player player : players) {
             player.setGameMode(GameMode.SPECTATOR);
             // Don't let players keep the brick through pauses
