@@ -65,6 +65,21 @@ public final class Brickball extends JavaPlugin {
         this.lobbyList = new LobbyList();
         // Load default match settings
         MatchSettings.loadDefault(getConfig().getConfigurationSection("defaultSettings"));
+        // Get the maps
+        for (File f : Objects.requireNonNull(templatesFolder.listFiles(pathname -> {
+            try {
+                if (pathname.getName().contains(".bbmap"))
+                    return true;
+            } catch (Exception ex) {
+                return false;
+            }
+            return false;
+        }))) {
+            if (this.templateManager.loadTemplateFromFile(f))
+                getLogger().log(Level.INFO, "[Debug] Loaded map " + f.getName());
+            else
+                getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
+        }
         // Load formats
         for (File file : formatsFolder.listFiles()) {
             YamlConfiguration formatConfig = new YamlConfiguration();
@@ -85,22 +100,6 @@ public final class Brickball extends JavaPlugin {
         }
         getCommand("brickball").setExecutor(new BrickballCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-
-        // Get the maps
-        for (File f : Objects.requireNonNull(templatesFolder.listFiles(pathname -> {
-            try {
-                if (pathname.getName().contains(".bbmap"))
-                    return true;
-            } catch (Exception ex) {
-                return false;
-            }
-            return false;
-        }))) {
-            if (this.templateManager.loadTemplateFromFile(f))
-                getLogger().log(Level.INFO, "[Debug] Loaded map " + f.getName());
-            else
-                getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
-        }
 
         doBackgroundArenaGeneration = getConfig().getBoolean("preloadArenas", false);
         if (doBackgroundArenaGeneration) {

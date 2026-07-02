@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 public class BrickballFormat {
     private final String name;
@@ -29,6 +30,8 @@ public class BrickballFormat {
             ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(s);
             if (template != null)
                 validMaps.add(template);
+            else
+                Brickball.getInstance().getLogger().log(Level.WARNING, String.format("Cannot find map '%s' for format '%s'.", s, name));
         }
     }
 

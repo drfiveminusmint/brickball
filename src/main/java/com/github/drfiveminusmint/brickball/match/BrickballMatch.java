@@ -124,8 +124,8 @@ public class BrickballMatch implements ForwardingAudience {
         for (String string : teams[teams.length-1].getEntries()) {
             Player player = Bukkit.getServer().getPlayer(string);
             if (player == null) continue;
-            player.setGameMode(GameMode.SPECTATOR);
             player.teleport(arena.getBrickSpawn());
+            player.setGameMode(GameMode.SPECTATOR);
         }
         state = MatchState.RUNNING;
         startRound();
@@ -143,7 +143,6 @@ public class BrickballMatch implements ForwardingAudience {
                 player.teleport(arena.getSpawnLocation(i));
                 // Turn the player to face the brick before we set their respawn location
                 player.lookAt(arena.getBrickSpawn(), LookAnchor.EYES);
-                player.setGameMode(GameMode.ADVENTURE);
                 if (settings.getBoolean(MatchSettings.Setting.NATURAL_REGENERATION)) {
                     player.setUnsaturatedRegenRate(80);
                     player.setSaturatedRegenRate(10);
@@ -184,6 +183,8 @@ public class BrickballMatch implements ForwardingAudience {
                     player.getInventory().setItemInOffHand(null);
                 }
                 player.setRespawnLocation(player.getLocation(), true);
+                // make CERTAIN that the players are all set to adventure mode
+                player.setGameMode(GameMode.ADVENTURE);
             }
         removeGroundEntities();
         spawnBrick();
@@ -249,8 +250,8 @@ public class BrickballMatch implements ForwardingAudience {
         player.setScoreboard(scoreboard);
         // If it's already in progress, they need to be put into spectator mode.
         if (state == MatchState.RUNNING) {
-            player.setGameMode(GameMode.SPECTATOR);
             player.teleport(arena.getBrickSpawn());
+            player.setGameMode(GameMode.SPECTATOR);
             if (settings.getInt(MatchSettings.Setting.TIMER) != -1)
                 timerBar.addPlayer(player);
             if (settings.getInt(MatchSettings.Setting.SHOT_CLOCK) != -1)
