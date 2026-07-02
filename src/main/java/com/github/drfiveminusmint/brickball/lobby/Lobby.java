@@ -134,6 +134,8 @@ public class Lobby implements ForwardingAudience {
             return false;
         if (readyPlayers.remove(player) == null)
             return false;
+        for (Team team : lobbyTeams) team.removePlayer(player);
+        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         if (isEmpty())
             shutdown();
         else
@@ -200,6 +202,7 @@ public class Lobby implements ForwardingAudience {
         // sever match link
         activeMatch.setReturningLobby(null);
         activeMatch = null;
+        updateScoreboard();
     }
 
     public boolean shutdown() {
