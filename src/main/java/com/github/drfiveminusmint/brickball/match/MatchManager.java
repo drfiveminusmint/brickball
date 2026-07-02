@@ -3,16 +3,12 @@ package com.github.drfiveminusmint.brickball.match;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.scheduling.ArenaRestockingTask;
-import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
 import com.github.drfiveminusmint.brickball.scheduling.RegionCleanupTask;
 import com.github.drfiveminusmint.brickball.util.WGUtils;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.world.World;
 import net.kyori.adventure.audience.Audience;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -62,7 +58,7 @@ public class MatchManager {
         return activePlayersMap.get(player);
     }
 
-    public @Nullable synchronized BrickballMatch startMatch(ArenaTemplate template, int priority) {
+    public @Nullable synchronized BrickballMatch createMatch(ArenaTemplate template, int priority) {
         if (Brickball.getInstance().getMatchWorld() == null) return null;
         BrickballMatch newMatch = getMatch(MatchState.FROZEN, template.getID());
         if (newMatch != null) {
@@ -117,9 +113,9 @@ public class MatchManager {
         match.freeze();
     }
 
-    public void joinMatch(Player player, BrickballMatch match) {
+    public boolean joinMatch(Player player, BrickballMatch match) {
         activePlayersMap.put(player, match);
-        match.joinMatch(player);
+        return match.joinMatch(player);
     }
 
     // Have a player leave their current match.

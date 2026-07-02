@@ -16,26 +16,37 @@ public class MatchSettings {
     private static MatchSettings DEFAULT;
     private final Map<NamespacedKey, Object> properties = HashMap.newHashMap(Setting.keys.size());
 
-    public MatchSettings() {
-        this.properties.putAll(DEFAULT.properties);
+    private MatchSettings() {}
+
+    public static MatchSettings cloneDefault() {
+        MatchSettings result = new MatchSettings();
+        result.properties.putAll(DEFAULT.properties);
+        return result;
     }
 
-    public MatchSettings(ConfigurationSection section) {
-        //TODO loading logic
-        properties.put(Setting.ARROWS, section.getInt("arrows", 10));
-        properties.put(Setting.POINTS_TO_WIN, section.getInt("pointsToWin", 5));
-        properties.put(Setting.RESPAWN_DELAY, section.getInt("respawnDelay", 0));
-        properties.put(Setting.SHOT_CLOCK, section.getInt("shotClock", -1));
-        properties.put(Setting.STEAKS, section.getInt("steaks", 8));
-        properties.put(Setting.TIMER, section.getInt("timer",-1));
-        properties.put(Setting.SATURATION, section.getDouble("saturation", 0.0));
-        properties.put(Setting.BRICK_FUMBLING, section.getBoolean("brickFumbling", false));
-        properties.put(Setting.DEATH_TURNOVERS, section.getBoolean("deathTurnovers", false));
-        properties.put(Setting.NATURAL_REGENERATION, section.getBoolean("naturalRegeneration", true));
-        properties.put(Setting.RESPAWNING, section.getBoolean("respawning", true));
+    // Load the settings for a given section in the following priority order:
+    // Given config section > defaults > hardcoded fallback values
+    public MatchSettings(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            this.properties.putAll(DEFAULT.properties);
+            return;
+        }
+        properties.put(Setting.ARROWS, section.getInt("arrows", (Integer) DEFAULT.properties.getOrDefault(Setting.ARROWS, 10)));
+        properties.put(Setting.POINTS_TO_WIN, section.getInt("pointsToWin", (Integer) DEFAULT.properties.getOrDefault(Setting.POINTS_TO_WIN, 5)));
+        properties.put(Setting.RESPAWN_DELAY, section.getInt("respawnDelay", (Integer) DEFAULT.properties.getOrDefault(Setting.RESPAWN_DELAY, 0)));
+        properties.put(Setting.SHOT_CLOCK, section.getInt("shotClock", (Integer) DEFAULT.properties.getOrDefault(Setting.SHOT_CLOCK, -1)));
+        properties.put(Setting.STEAKS, section.getInt("steaks", (Integer) DEFAULT.properties.getOrDefault(Setting.STEAKS, 8)));
+        properties.put(Setting.TIMER, section.getInt("timer",(Integer) DEFAULT.properties.getOrDefault(Setting.TIMER, -1)));
+        properties.put(Setting.SATURATION, section.getDouble("saturation", (Double) DEFAULT.properties.getOrDefault(Setting.SATURATION, 0.0)));
+        properties.put(Setting.BRICK_FUMBLING, section.getBoolean("brickFumbling", (Boolean) DEFAULT.properties.getOrDefault(Setting.BRICK_FUMBLING, false)));
+        properties.put(Setting.DEATH_TURNOVERS, section.getBoolean("deathTurnovers", (Boolean) DEFAULT.properties.getOrDefault(Setting.DEATH_TURNOVERS, false)));
+        properties.put(Setting.NATURAL_REGENERATION, section.getBoolean("naturalRegeneration", (Boolean) DEFAULT.properties.getOrDefault(Setting.NATURAL_REGENERATION, true)));
+        properties.put(Setting.RESPAWNING, section.getBoolean("respawning", (Boolean) DEFAULT.properties.getOrDefault(Setting.RESPAWNING, true)));
     }
 
     public static void loadDefault(ConfigurationSection map) {
+        // load defaults or get fallback values
+        DEFAULT = new MatchSettings(); // DON'T REMOVE THIS, IT PREVENTS A NPE, YES I KNOW IT'S DUMB
         DEFAULT = new MatchSettings(map);
     }
 

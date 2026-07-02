@@ -3,8 +3,11 @@ package com.github.drfiveminusmint.brickball.command;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
+import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
+import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import net.kyori.adventure.text.Component;
@@ -43,11 +46,92 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("start")) return startCommand(player);
         if (args[0].equalsIgnoreCase("teamColor")) return teamColorCommand(player, args);
         if (args[0].equalsIgnoreCase("setting")) return settingCommand(player, args);
+        if (args[0].equalsIgnoreCase("setmap")) return setMapCommand(player, args);
         if (args[0].equalsIgnoreCase("setworld")) return setWorldCommand(player, args);
         if (args[0].equalsIgnoreCase("admin")) return adminCommand(player, args);
         if (args[0].equalsIgnoreCase("pause")) return pauseCommand(player, args);
         if (args[0].equalsIgnoreCase("unpause")) return unpauseCommand(player, args);
+        if (args[0].equalsIgnoreCase("ready") || args[0].equalsIgnoreCase("unready")) return readyCommand(player, args);
+        if (args[0].equalsIgnoreCase("invite")) return inviteCommand(player, args);
         return false;
+    }
+
+    private boolean inviteCommand(Player player, String[] args) {
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (args.length < 2) {
+            player.sendMessage(Component.text("Please supply a player to invite.", NamedTextColor.RED));
+            return true;
+        }
+        Player other = Bukkit.getPlayer(args[1]);
+        if (other == null) {
+            player.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
+            return true;
+        }
+        lobby.invite(other, player);
+        return true;
+    }
+
+    private boolean readyCommand(Player player, String[] args) {
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) != null) {
+            player.sendMessage(Component.text("The match has already started!", NamedTextColor.RED));
+            return true;
+        }
+        if (lobby.toggleReady(player))
+            lobby.sendMessage(player.displayName().append(Component.text(" is now ready!", NamedTextColor.GOLD)));
+        else
+            lobby.sendMessage(player.displayName().append(Component.text(" is no longer ready.", NamedTextColor.GOLD)));
+        return true;
+    }
+
+    private boolean setMapCommand(Player player, String[] args) {
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (!player.equals(lobby.getHost())) {
+            player.sendMessage(Component.text("You can only change the map if you're the lobby host.", NamedTextColor.RED));
+            return true;
+        }
+        if (args.length < 2) {
+            player.sendMessage("Usage: /brickball setmap (mapName)");
+            return true;
+        }
+        ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[1]);
+        if (template == null) {
+            Component message = Component.text(args[1], NamedTextColor.DARK_RED)
+                    .append(Component.text(" is not a Brickball map. Legal maps for this format are: ", NamedTextColor.RED));
+            for (ArenaTemplate candidate : lobby.getFormat().getValidMaps()) {
+                message = message.append(Component.text(candidate.getID(), NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball setmap " + candidate.getID())))
+                        .append(Component.text(" "));
+            }
+            player.sendMessage(message);
+            return true;
+        }
+        if (!lobby.setMap(template, player)) {
+            Component message = Component.text(args[1], NamedTextColor.DARK_RED)
+                    .append(Component.text(" is not legal in this Brickball format. Legal maps for this format are: ", NamedTextColor.RED));
+            for (ArenaTemplate candidate : lobby.getFormat().getValidMaps()) {
+                message = message.append(Component.text(candidate.getID(), NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball setmap " + candidate.getID())))
+                        .append(Component.text(" "));
+            }
+            player.sendMessage(message);
+        }
+        lobby.sendMessage(Component.text("[Brickball] ", NamedTextColor.GOLD)
+                .append(player.displayName())
+                .append(Component.text(" has selected ", NamedTextColor.GOLD))
+                .append(Component.text(template.getID(), NamedTextColor.AQUA))
+                .append(Component.text(" as the next map.", NamedTextColor.GOLD)));
+        return true;
     }
 
     public boolean adminCommand (Player player, String[] args) {
@@ -69,10 +153,15 @@ public class BrickballCommand implements TabExecutor {
         return true;
     }
 
+    // Sets the team color of one of the lobby's teams
     public boolean teamColorCommand (Player player, String[] args) {
-        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
-        if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (!player.equals(lobby.getHost())) {
+            player.sendMessage(Component.text("You can only change the team colors if you're the lobby host.", NamedTextColor.RED));
             return true;
         }
         if (args.length < 3) {
@@ -95,52 +184,74 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         // the internal array is zero-indexed but that confuses users, so we have to convert
-        match.setTeamColor(color, team-1);
+        // setting the lobby's team colors also propagates these changes down
+        lobby.setTeamColor(color, team-1);
         return true;
     }
 
+    // Creates a lobby with the format specified in args[1] and optional flags in args[2]
     public boolean createCommand(Player player, String[] args) {
         if (!player.hasPermission("brickball.create")) return insufficientPermissions(player);
         if (args.length < 2) {
-            player.sendMessage("Usage: /brickball create (map)");
+            player.sendMessage("Usage: /brickball create (format)");
             return true;
         }
-        if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) != null) {
-            player.sendMessage("You're already in a Brickball match.");
+        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player) != null) {
+            player.sendMessage("You're already in a Brickball lobby.");
             return true;
         }
         if (Brickball.getInstance().getMatchWorld() == null)
         {
             player.sendMessage("Error: Match world not set. Set it with /brickball setWorld");
+            return true;
         }
+        /*
         ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[1]);
         if (template == null) {
             player.sendMessage(String.format("Couldn't find arena template: %s", args[1]));
             return true;
         }
-        BrickballMatch newMatch = Brickball.getInstance().getMatchManager().startMatch(template, 10);
-        if (newMatch == null) {
-            player.sendMessage("Error creating match!");
+        */
+        BrickballFormat format = null;
+        for (BrickballFormat candidate : Brickball.getInstance().getFormats())
+            if (candidate.getName().equalsIgnoreCase(args[1])) {
+                format = candidate;
+                break;
+            }
+        if (format == null) {
+            Component message = Component.text(args[1], NamedTextColor.DARK_RED)
+                    .append(Component.text(" is not an available Brickball format. Available formats are: ", NamedTextColor.RED));
+            for (BrickballFormat candidate : Brickball.getInstance().getFormats()) {
+                message = message.append(Component.text(candidate.getName(), NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball create " + candidate.getName())))
+                        .append(Component.text(" "));
+            }
+            player.sendMessage(message);
             return true;
         }
+        String flags = "";
+        if (args.length > 2 && args[2].charAt(0) == '-')
+            flags = args[2];
+        Lobby newLobby = new Lobby(format, flags.contains("p"));
         Bukkit.getServer().broadcast(Component.text("[Brickball] ", NamedTextColor.GOLD)
                 .append(player.displayName())
-                .append(Component.text(" has created a match on ", NamedTextColor.GOLD))
-                .append(Component.text(args[1], NamedTextColor.YELLOW)).append(Component.text(". ", NamedTextColor.GOLD))
+                .append(Component.text(" has created a ", NamedTextColor.GOLD))
+                .append(Component.text(format.getName(), NamedTextColor.YELLOW)).append(Component.text(" lobby. ", NamedTextColor.GOLD))
                 .append(Component.text("Click to join!", NamedTextColor.AQUA)).clickEvent(ClickEvent.runCommand("/brickball join " + player.getName())));
-        Brickball.getInstance().getMatchManager().joinMatch(player, newMatch);
+        newLobby.join(player, 2); // start as spectator
+        newLobby.setHost(player);
         player.sendMessage(Component.text("[Start Match]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball start")));
         return true;
     }
 
+    // Joins the current lobby of the player specified in args[1]
     public boolean joinCommand(Player player, String[] args) {
         if (!player.hasPermission("brickball.join")) return insufficientPermissions(player);
         if (args.length < 2) {
             player.sendMessage("Usage: /brickball join (user)");
             return true;
         }
-        if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) != null) {
-            player.sendMessage(Component.text("You're already in a brickball match!", NamedTextColor.RED));
+        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player) != null) {
+            player.sendMessage(Component.text("You're already in a Brickball lobby!", NamedTextColor.RED));
             return true;
         }
         Player otherPlayer = Bukkit.getPlayer(args[1]);
@@ -148,36 +259,47 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text(String.format("Player %s not found.", args[1]), NamedTextColor.RED));
             return true;
         }
-        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(otherPlayer);
-        if (match == null) {
-            player.sendMessage(Component.text(String.format("Player %s has no active Brickball match you can join.", args[1]), NamedTextColor.RED));
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(otherPlayer);
+        if (lobby == null) {
+            player.sendMessage(Component.text(String.format("Player %s has no active Brickball lobby you can join.", args[1]), NamedTextColor.RED));
             return true;
         }
-        Brickball.getInstance().getMatchManager().joinMatch(player, match);
+        if(!lobby.join(player, 0)) {
+            player.sendMessage(Component.text(String.format("You don't have permission to join this match.", args[1]), NamedTextColor.RED));
+            return true;
+        }
         return true;
     }
 
+    // Leaves the player's current lobby
     public boolean leaveCommand(Player player) {
-        if (Brickball.getInstance().getMatchManager().leaveMatch(player)) {
-            player.sendMessage("You have left the match.");
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby != null) {
+            lobby.leave(player);
+            player.sendMessage("You have left the lobby.");
             return true;
         }
-        player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
+        player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
         return true;
     }
 
+    // Changes the player's team to the one specified in args[1]
+    // Fails if a match is currently running, as otherwise their lobby and game teams could become desynchronized.
     public boolean teamCommand(Player player, String[] args) {
-        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
-        if (match == null) {
-            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
+        }
+        if (lobby.getCurrentMatchState() != null && !lobby.getCurrentMatchState().equals(MatchState.PAUSED)) {
+            player.sendMessage("You can't switch teams while a match is running. Use '/brickball pause' or wait for the end of the match.");
         }
         if (args.length < 2) {
             player.sendMessage("Specify a team to join (Spectator is team 3).");
             return true;
         }
         try {
-            if (!match.joinTeam(player, Integer.parseInt(args[1]) - 1)) {
+            if (!lobby.joinTeam(player, Integer.parseInt(args[1]) - 1)) {
                 player.sendMessage(Component.text("Error joining team.", NamedTextColor.RED));
                 return true;
             }
@@ -188,17 +310,19 @@ public class BrickballCommand implements TabExecutor {
         return true;
     }
 
+    // Alters match settings in the player's current lobby.
+    // These changes propagate downwards to the active match if one is present.
     public boolean settingCommand(Player player, String[] args) {
         if (args.length < 2) {
             player.sendMessage("Usage: /brickball setting (setting) <value>");
             return true;
         }
-        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
-        if (match == null) {
-            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (!match.getIsHost(player)) {
+        if (lobby.getHost() != player) {
             player.sendMessage(Component.text("Only the host can change match settings.", NamedTextColor.RED));
             return true;
         }
@@ -207,7 +331,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("Unknown match setting: " + args[1], NamedTextColor.RED));
             return true;
         }
-        Object value = match.getSettings().get(key);
+        Object value = lobby.getMatchSetting(key);
         if (args.length == 2) {
             player.sendMessage(String.format("Match setting %s is set to: %s", key.getKey(), value));
             return true;
@@ -216,7 +340,7 @@ public class BrickballCommand implements TabExecutor {
             case Integer integer -> {
                 try {
                     int i = Integer.parseInt(args[2]);
-                    match.getSettings().set(key, i);
+                    lobby.setMatchSetting(key, i);
                 } catch (NumberFormatException exception) {
                     player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
@@ -225,7 +349,7 @@ public class BrickballCommand implements TabExecutor {
             case Double v -> {
                 try {
                     double d = Double.parseDouble(args[2]);
-                    match.getSettings().set(key, d);
+                    lobby.setMatchSetting(key, d);
                 } catch (NumberFormatException exception) {
                     player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
@@ -234,7 +358,7 @@ public class BrickballCommand implements TabExecutor {
             case Boolean aBoolean -> {
                 try {
                     boolean b = Boolean.parseBoolean(args[2]);
-                    match.getSettings().set(key, b);
+                    lobby.setMatchSetting(key, b);
                 } catch (NumberFormatException exception) {
                     player.sendMessage(Component.text("Could not parse argument: " + args[2], NamedTextColor.RED));
                     return true;
@@ -304,12 +428,16 @@ public class BrickballCommand implements TabExecutor {
     }
 
     public boolean startCommand(Player player) {
-        BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
-        if (match == null) {
-            player.sendMessage(Component.text("You're not in a Brickball match.", NamedTextColor.RED));
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (match.startMatch()) {
+        if (player != lobby.getHost()) {
+            player.sendMessage(Component.text("Only a lobby host can use this command.", NamedTextColor.RED));
+            return true;
+        }
+        if (lobby.tryStartMatch(true)) {
             player.sendMessage("Match starting! Please wait...");
         } else {
             player.sendMessage(Component.text("Error starting match.", NamedTextColor.RED));
@@ -325,7 +453,12 @@ public class BrickballCommand implements TabExecutor {
                 result.add(player.getName());
             return result;
         }
-        if (args[0].equalsIgnoreCase("create")) return Brickball.getInstance().getTemplateManager().listTemplateIDs();
+        if (args[0].equalsIgnoreCase("create")) {
+            List<String> result = new ArrayList<>();
+            for (BrickballFormat format : Brickball.getInstance().getFormats())
+                result.add(format.getName());
+            return result;
+        }
         if (args[0].equalsIgnoreCase("map")) {
             if (args.length == 2)
                 return List.of("save", "delete", "list");
@@ -337,6 +470,7 @@ public class BrickballCommand implements TabExecutor {
             if (args.length == 2) return List.of("1", "2");
             return List.of("black", "blue", "cyan", "gray", "green", "lightblue","lightgray", "lime", "magenta", "orange", "pink", "purple", "red", "white", "yellow");
         }
+        if (args[0].equalsIgnoreCase("setmap")) return Brickball.getInstance().getTemplateManager().listTemplateIDs();
         if (args[0].equalsIgnoreCase("setting") && args.length == 2) {
             List<String> result = new ArrayList<>();
             for (NamespacedKey key : MatchSettings.Setting.keys)
@@ -370,14 +504,14 @@ public class BrickballCommand implements TabExecutor {
     public boolean pauseCommand(Player player, String[] args) {
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+            player.sendMessage(Component.text("You're not in an active Brickball match.", NamedTextColor.RED));
             return true;
         }
         if (!match.getIsHost(player)) {
             player.sendMessage(Component.text("Only the host can pause the match.", NamedTextColor.RED));
             return true;
         }
-        if (match.pause()) {
+        if (match.pause(true)) {
             player.sendMessage(Component.text("[Brickball] Match paused. ", NamedTextColor.WHITE)
                     .append(Component.text("Click here to unpause.", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball unpause"))));
         } else {
@@ -389,7 +523,7 @@ public class BrickballCommand implements TabExecutor {
     public boolean unpauseCommand(Player player, String[] args) {
         BrickballMatch match = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (match == null) {
-            player.sendMessage("You're not in a Brickball match.");
+            player.sendMessage(Component.text("You're not in an active Brickball match.", NamedTextColor.RED));
             return true;
         }
         if (!match.getIsHost(player)) {

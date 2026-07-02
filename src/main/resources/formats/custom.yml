@@ -1,0 +1,9 @@
+# The name of this format
+name: "custom"
+# The maximum number of players permissible in this format's lobbies
+maxPlayers: 99
+# Permitted maps, leave empty to allow all maps
+maps: ["*"]
+# Override default match settings. Not all settings need to be defined here.
+overrideSettings:
+

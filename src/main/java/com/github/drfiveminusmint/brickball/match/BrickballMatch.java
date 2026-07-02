@@ -3,6 +3,7 @@ package com.github.drfiveminusmint.brickball.match;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.BrickballArena;
+import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.scheduling.TimerUpdateHelper;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.github.drfiveminusmint.brickball.util.Counter;
@@ -59,7 +60,8 @@ public class BrickballMatch implements ForwardingAudience {
     private final BossBar shotClockBar = Bukkit.createBossBar("", BarColor.RED, BarStyle.SEGMENTED_10);
     private final BrickballArena arena;
     private Player host = null;
-    private final MatchSettings settings = new MatchSettings();
+    private Lobby returningLobby = null;
+    private MatchSettings settings = MatchSettings.cloneDefault();
     private TimerUpdateHelper timeHelper = new TimerUpdateHelper(this);
 
     private final Map<Player, Counter> kills = new HashMap<>(), deaths = new HashMap<>(), scores = new HashMap<>();
@@ -68,12 +70,14 @@ public class BrickballMatch implements ForwardingAudience {
     private int timer, timeLimit, shotClock, shotClockMax;
     private MatchState state;
 
-    public BrickballMatch(ArenaTemplate template, Location minPoint, int matchID) {
+    // Constructor is default privacy level because only MatchManager should EVER use it
+    // Use MatchManager.createMatch() instead
+    BrickballMatch(ArenaTemplate template, Location minPoint, int matchID) {
         this.matchID = matchID;
         arena = new BrickballArena(template, minPoint, matchID);
     }
 
-    public void initialize(int priority) {
+    void initialize(int priority) {
         scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         matchScoreObjective = scoreboard.registerNewObjective("match score", Criteria.DUMMY, Component.text("Points"));
         for (int i = 0; i <= 1; i++) {
@@ -216,15 +220,7 @@ public class BrickballMatch implements ForwardingAudience {
                     if (matchScoreObjective.getScore(teamNames[i]).getScore() < settings.getInt(MatchSettings.Setting.POINTS_TO_WIN))
                         startRound();
                     else {
-                        sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[i]).color(teamColors[i].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
-                        displayStats(players);
-                        pause();
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                Brickball.getInstance().getMatchManager().endMatch((BrickballMatch.this));
-                            }
-                        }.runTaskLater(Brickball.getInstance(), 200);
+                        endMatch();
                     }
                 }
     }
@@ -246,7 +242,7 @@ public class BrickballMatch implements ForwardingAudience {
         brick.setGlowing(true);
     }
 
-    public boolean joinMatch(Player player) {
+    boolean joinMatch(Player player) {
         teams[teams.length-1].addPlayer(player);
         if (host == null) host = player;
         players.add(player);
@@ -260,13 +256,10 @@ public class BrickballMatch implements ForwardingAudience {
             if (settings.getInt(MatchSettings.Setting.SHOT_CLOCK) != -1)
                 shotClockBar.addPlayer(player);
         }
-        sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" joined the match.")));
-        player.sendMessage(Component.text("[Join Team 1]", teamColors[0].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 1")));
-        player.sendMessage(Component.text("[Join Team 2]", teamColors[1].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 2")));
         return true;
     }
 
-    public boolean leaveMatch(Player player) {
+    boolean leaveMatch(Player player) {
         for (Team team : teams)
             team.removePlayer(player);
         // Don't take the brick with you when leaving
@@ -288,21 +281,18 @@ public class BrickballMatch implements ForwardingAudience {
         return false;
     }
     public boolean joinTeam(Player player, int teamID) {
+        // make sure the player is in the match
         if (!players.contains(player))
-            if (!joinMatch(player)) return false;
+            if (!Brickball.getInstance().getMatchManager().joinMatch(player, this)) return false;
         if (teamID >= teams.length) return false;
-        // No team switching while the game is actively running!
-        if (state == MatchState.RUNNING) return false;
+        // No joining a player team while the game is running
+        if (state == MatchState.RUNNING && teamID != 2) return false;
         // Remove the player from any current teams
         for(Team team : teams)
             team.removePlayer(player);
         teams[teamID].addPlayer(player);
         if (state == MatchState.PAUSED)
             setupPlayer(player, teamID);
-        if (teamID < teams.length-1)
-            sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(String.format(" joined Team %d.", teamID+1))));
-        else
-            sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" is now spectating")));
         return true;
     }
 
@@ -315,7 +305,7 @@ public class BrickballMatch implements ForwardingAudience {
         return true;
     }
 
-    public void shutdown () {
+    void shutdown () {
         state = MatchState.STOPPING;
         arena.cleanupArena();
         removeGroundEntities();
@@ -330,6 +320,8 @@ public class BrickballMatch implements ForwardingAudience {
             team.removeEntries(entries);
             team.unregister();
         }
+        if (returningLobby != null)
+            returningLobby.returnPlayersToLobby();
         players.clear();
         // Prevent a resource leak
         try {
@@ -338,7 +330,7 @@ public class BrickballMatch implements ForwardingAudience {
         timeHelper = null;
     }
 
-    public void freeze() {
+    void freeze() {
         state = MatchState.STOPPING;
         // remove all players
         for (Player player : players) {
@@ -346,6 +338,8 @@ public class BrickballMatch implements ForwardingAudience {
                 team.removePlayer(player);
             cleanupPlayer(player);
         }
+        if (returningLobby != null)
+            returningLobby.returnPlayersToLobby();
         players.clear();
         host = null;
         // reset scores
@@ -362,7 +356,7 @@ public class BrickballMatch implements ForwardingAudience {
         timeHelper = null;
     }
 
-    public void unfreeze() {
+    void unfreeze() {
         if (state != MatchState.FROZEN) return;
         state = MatchState.PREPARING;
     }
@@ -375,6 +369,7 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void reportDeath(Player dead) {
+        if (!state.equals(MatchState.RUNNING)) return;
         if (!deaths.containsKey(dead)) deaths.put(dead, new Counter());
         deaths.get(dead).increment();
         if (dead.getKiller() != null) {
@@ -498,22 +493,26 @@ public class BrickballMatch implements ForwardingAudience {
             timer++;
             updateBossBar(timerBar, timer, timeLimit, "Time Remaining: %d:%02d");
         } else if (timeLimit > 0) { // end the match if the match timer is enabled and time is over the limit
-            int winningTeam = 0;
-            if (matchScoreObjective.getScore(teamNames[0]).getScore() == matchScoreObjective.getScore(teamNames[1]).getScore())
-                sendMessage(Component.text("[Brickball] The match ended in a tie!").color(NamedTextColor.GOLD));
-            else {
-                winningTeam = (matchScoreObjective.getScore(teamNames[0]).getScore() > matchScoreObjective.getScore(teamNames[1]).getScore()) ? 0 : 1;
-                sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[winningTeam]).color(teamColors[winningTeam].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
-            }
-            displayStats(players);
-            pause();
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    Brickball.getInstance().getMatchManager().endMatch((BrickballMatch.this));
-                }
-            }.runTaskLater(Brickball.getInstance(), 200);
+            endMatch();
         }
+    }
+
+    private void endMatch() {
+        int winningTeam = 0;
+        if (matchScoreObjective.getScore(teamNames[0]).getScore() == matchScoreObjective.getScore(teamNames[1]).getScore())
+            sendMessage(Component.text("[Brickball] The match ended in a tie!").color(NamedTextColor.GOLD));
+        else {
+            winningTeam = (matchScoreObjective.getScore(teamNames[0]).getScore() > matchScoreObjective.getScore(teamNames[1]).getScore()) ? 0 : 1;
+            sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[winningTeam]).color(teamColors[winningTeam].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
+        }
+        displayStats(players);
+        pause(false);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                Brickball.getInstance().getMatchManager().endMatch((BrickballMatch.this));
+            }
+        }.runTaskLater(Brickball.getInstance(), 200);
     }
 
     // Signal to the match that the target player has turned the ball over
@@ -552,15 +551,18 @@ public class BrickballMatch implements ForwardingAudience {
     public MatchSettings getSettings() {
         return settings;
     }
+
+    public void overwriteSettings(MatchSettings settings) {this.settings = settings;}
     public MatchState getState() {return state;}
     public String getMapID() {return arena.getTemplateID();}
 
-    public boolean pause() {
+    public boolean pause(boolean notify) {
         if (state != MatchState.RUNNING) return false;
         state = MatchState.PAUSED;
-        sendMessage(Component.text("[Brickball] ", NamedTextColor.WHITE)
+        if (notify)
+            sendMessage(Component.text("[Brickball] ", NamedTextColor.WHITE)
                 .append(host.displayName())
-                .append(Component.text("has paused the game", NamedTextColor.WHITE)));
+                .append(Component.text(" has paused the game ", NamedTextColor.WHITE)));
         for (Player player : players) {
             player.setGameMode(GameMode.SPECTATOR);
             // Don't let players keep the brick through pauses
@@ -586,4 +588,6 @@ public class BrickballMatch implements ForwardingAudience {
     public void stopShotClock() {shotClock = -1;}
 
     public boolean getIsHost(Player other) {return other.equals(host);}
+
+    public void setReturningLobby(Lobby lobby) { returningLobby = lobby; }
 }

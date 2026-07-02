@@ -1,6 +1,7 @@
 package com.github.drfiveminusmint.brickball.listener;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
@@ -190,6 +191,8 @@ public class PlayerListener implements Listener {
     //Ensure players leave all matches before they disconnect.
     @EventHandler
     public void onPlayerLogout (PlayerQuitEvent event) {
-        Brickball.getInstance().getMatchManager().leaveMatch(event.getPlayer());
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(event.getPlayer());
+        if (lobby != null)
+            lobby.leave(event.getPlayer());
     }
 }
