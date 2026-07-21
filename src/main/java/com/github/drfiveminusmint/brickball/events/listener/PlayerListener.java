@@ -49,6 +49,7 @@ public class PlayerListener implements Listener {
         event.setCancelled(true);
         playerMatch.sendMessage(event.deathMessage());
         playerMatch.reportDeath(player);
+        player.closeInventory();
         if (((player.getKiller() != null && player.getKiller().getGameMode().equals(GameMode.ADVENTURE)) && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)))) {
             // Transfer the brick to the killer if there is one
             player.removePotionEffect(PotionEffectType.WEAKNESS);

@@ -143,9 +143,9 @@ public class Lobby implements ForwardingAudience {
             return false;
         if (readyPlayers.remove(player) == null)
             return false;
+        for (Team team : lobbyTeams) team.removePlayer(player);
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().leaveMatch(player);
-        for (Team team : lobbyTeams) team.removePlayer(player);
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         if (isEmpty())
             shutdown();

@@ -42,7 +42,6 @@ public class FormatStats {
         if (format.getIsRated()) {
             // update ratings
             // get average rating
-            Brickball.getInstance().getLogger().log(Level.INFO, "[FormatStats:45] Updating Rating");
             int winnerRating = 0, loserRating = 0;
             for (Player player : result.winningTeam)
                 winnerRating += getPlayerStatsSafe(player.getUniqueId()).get(TrackedStat.RATING);
@@ -75,7 +74,7 @@ public class FormatStats {
             int losingPoints = -winningPoints;
             if (!result.leavers.isEmpty()) {
                 // leavers absorb half the total losses
-                if (losingPoints > 0) {
+                if (losingPoints < 0) {
                     if (result.losingTeam.isEmpty()) {
                         distributePoints(result.leavers, losingPoints);
                     } else {

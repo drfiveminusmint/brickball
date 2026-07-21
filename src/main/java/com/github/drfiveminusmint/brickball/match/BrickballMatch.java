@@ -148,6 +148,7 @@ public class BrickballMatch implements ForwardingAudience {
                 Player player = Bukkit.getServer().getPlayer(string);
                 if (player == null) continue;
                 player.teleport(arena.getSpawnLocation(i));
+                player.closeInventory();
                 // Turn the player to face the brick before we set their respawn location
                 player.lookAt(arena.getBrickSpawn(), LookAnchor.EYES);
                 if (settings.getBoolean(MatchSettings.Setting.NATURAL_REGENERATION)) {
@@ -271,6 +272,7 @@ public class BrickballMatch implements ForwardingAudience {
         for (Team team : teams)
             team.removePlayer(player);
         // Don't take the brick with you when leaving
+        player.closeInventory();
         if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
             spawnBrick();
         cleanupPlayer(player);
@@ -284,7 +286,9 @@ public class BrickballMatch implements ForwardingAudience {
                 else
                     host = null;
             }
-            leavers.add(player);
+            // unless they're a spectator, add them to the list of leavers
+            if (getPlayerTeam(player) != teams[teams.length-1])
+                leavers.add(player);
             return true;
         }
         return false;
@@ -398,10 +402,11 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void reportLoadingProgress(int current, int max) {
-        if (current == max)
+        if (current == max) {
             arena.built = true;
             if (state == MatchState.LOADING) // don't start unless config is also done
                 startMatch();
+        }
             Brickball.getInstance().getLogger().log(Level.INFO, String.format("Loading match on %s %d/%d", arena.getTemplateID(), current, max));
     }
 
@@ -415,6 +420,7 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     private void setupPlayer(Player player, int team) {
+        player.closeInventory();
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
         // setup armor
@@ -452,7 +458,9 @@ public class BrickballMatch implements ForwardingAudience {
         shotClockBar.removePlayer(player);
         if (player.getRespawnLocation() != null)
             player.teleport(player.getRespawnLocation());
+        player.closeInventory();
         player.getInventory().clear();
+        player.getInventory().setItemInOffHand(null);
         player.clearActivePotionEffects();
     }
 
@@ -495,7 +503,8 @@ public class BrickballMatch implements ForwardingAudience {
             shotClockBar.setVisible(true);
             updateBossBar(shotClockBar, shotClockMax - (--shotClock), shotClockMax, "Shot Clock: %d:%02d");
             if (shotClock == 0) {
-                for(Player player : players)
+                for(Player player : players) {
+                    player.closeInventory();
                     if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)) {
                         // Shot clock has expired
                         // Remove the brick from the offending team
@@ -508,6 +517,7 @@ public class BrickballMatch implements ForwardingAudience {
                         // give the brick to the other team
                         turnover(player);
                     }
+                }
                 stopShotClock();
             } else if (shotClock == 20) {
                 // Warn the players
