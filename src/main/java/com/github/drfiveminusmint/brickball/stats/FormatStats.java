@@ -120,12 +120,6 @@ public class FormatStats {
         for (Player player : result.deaths.keySet())
             getPlayerStatsSafe(player.getUniqueId()).adjust(TrackedStat.DEATHS, result.deaths.get(player).value());
 
-        // DEBUG
-        for (Player player : result.winningTeam)
-            displayStats(player, player);
-        for (Player player : result.losingTeam)
-            displayStats(player, player);
-
         // Save stats to file
         Brickball.getInstance().getScheduler().submitTask(new SaveStatsTask(-1, this, new File(Brickball.getStatsFolder(), format.getName() + ".csv")));
         return true;
