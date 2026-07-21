@@ -5,6 +5,7 @@ import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
+import com.github.drfiveminusmint.brickball.lobby.LobbyList;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BrickballCommand implements TabExecutor {
 
@@ -189,6 +191,7 @@ public class BrickballCommand implements TabExecutor {
         }
         if (args[1].equalsIgnoreCase("shutdown")) {
             Brickball.getInstance().getMatchManager().stopAllMatches();
+            Brickball.getInstance().getLobbyList().shutdownAll();
         }
         return true;
     }
@@ -355,8 +358,12 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (lobby.getHost() != player) {
+        if (lobby.getHost() != player && !player.hasPermission("brickball.settings.override")) {
             player.sendMessage(Component.text("Only the host can change match settings.", NamedTextColor.RED));
+            return true;
+        }
+        if (lobby.getFormat().getIsRated() && !player.hasPermission("brickball.settings.override")) {
+            player.sendMessage(Component.text("You can't change match settings in a rated match.", NamedTextColor.RED));
             return true;
         }
         NamespacedKey key = MatchSettings.Setting.getKey(args[1]);
@@ -503,7 +510,14 @@ public class BrickballCommand implements TabExecutor {
             if (args.length == 2) return List.of("1", "2");
             return List.of("black", "blue", "cyan", "gray", "green", "lightblue","lightgray", "lime", "magenta", "orange", "pink", "purple", "red", "white", "yellow");
         }
-        if (args[0].equalsIgnoreCase("setmap")) return Brickball.getInstance().getTemplateManager().listTemplateIDs();
+        if (args[0].equalsIgnoreCase("setmap")) {
+            if (!(commandSender instanceof  Player player)) return null;
+            Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+            if (lobby != null)
+                return lobby.getFormat().getValidMaps().stream().map(ArenaTemplate::getID).collect(Collectors.toList());
+            else
+                return Brickball.getInstance().getTemplateManager().listTemplateIDs();
+        }
         if (args[0].equalsIgnoreCase("setting") && args.length == 2) {
             List<String> result = new ArrayList<>();
             for (NamespacedKey key : MatchSettings.Setting.keys)

@@ -4,7 +4,6 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import org.bukkit.configuration.ConfigurationSection;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +13,7 @@ import java.util.logging.Level;
 public class BrickballFormat {
     private final String name;
     private final boolean isRated;
-    private final int maxPlayers;
+    private final int minPlayersPerTeam, maxPlayersPerTeam;
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
 
@@ -22,7 +21,8 @@ public class BrickballFormat {
         this.name = section.getString("name");
         if (name == null)
             throw new IllegalArgumentException("All Brickball formats must have 'name' defined.");
-        this.maxPlayers = section.getInt("maxPlayers", 99);
+        this.minPlayersPerTeam = section.getInt("minPlayersPerTeam", 0);
+        this.maxPlayersPerTeam = section.getInt("maxPlayersPerTeam", 99);
         this.isRated = section.getBoolean("isRated", false);
         // if there is no such section, this will return a clone of the default settings
         this.settings = new MatchSettings(section.getConfigurationSection("overrideSettings"));
@@ -41,7 +41,8 @@ public class BrickballFormat {
 
     public boolean getIsRated() {return isRated;}
 
-    public int getMaxPlayers() { return maxPlayers; }
+    public int getMinPlayersPerTeam() { return minPlayersPerTeam; }
+    public int getMaxPlayersPerTeam() { return maxPlayersPerTeam; }
 
     public MatchSettings getSettings() { return settings; }
 

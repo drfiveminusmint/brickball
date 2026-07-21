@@ -42,6 +42,7 @@ public class FormatStats {
         if (format.getIsRated()) {
             // update ratings
             // get average rating
+            Brickball.getInstance().getLogger().log(Level.INFO, "[FormatStats:45] Updating Rating");
             int winnerRating = 0, loserRating = 0;
             for (Player player : result.winningTeam)
                 winnerRating += getPlayerStatsSafe(player.getUniqueId()).get(TrackedStat.RATING);

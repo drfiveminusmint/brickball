@@ -399,10 +399,9 @@ public class BrickballMatch implements ForwardingAudience {
 
     public void reportLoadingProgress(int current, int max) {
         if (current == max)
+            arena.built = true;
             if (state == MatchState.LOADING) // don't start unless config is also done
                 startMatch();
-            else
-                arena.built = true;
             Brickball.getInstance().getLogger().log(Level.INFO, String.format("Loading match on %s %d/%d", arena.getTemplateID(), current, max));
     }
 

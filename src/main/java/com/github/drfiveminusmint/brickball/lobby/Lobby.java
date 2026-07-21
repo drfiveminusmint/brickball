@@ -5,7 +5,6 @@ import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
-import com.github.drfiveminusmint.brickball.scheduling.MatchStartTask;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
@@ -15,7 +14,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +43,11 @@ public class Lobby implements ForwardingAudience {
     public Lobby(BrickballFormat format, boolean isPrivate) {
         savedSettings = MatchSettings.cloneDefault();
         setFormat(format, null);
+        // Debug
+        if (this.format.getIsRated())
+            Brickball.getInstance().getLogger().log(Level.INFO, "Rated Match Created!");
+        else
+            Brickball.getInstance().getLogger().log(Level.INFO, "Unrated Match Created!");
         this.isPrivate = isPrivate;
         Brickball.getInstance().getLobbyList().registerLobby(this);
         // Setup a cosmetic scoreboard
@@ -72,7 +75,10 @@ public class Lobby implements ForwardingAudience {
     // Returns false if the player cannot join this lobby
     public boolean join (Player player, int startingTeamID) {
         if (isPrivate && !invited.contains(player)) return false;
-        if (readyPlayers.size() >= format.getMaxPlayers()) return false;
+        // kick them to the spectators if their preferred team is full
+        if (lobbyTeams[startingTeamID].getSize() >= format.getMaxPlayersPerTeam() && startingTeamID != lobbyTeams.length-1) {
+            startingTeamID = lobbyTeams.length-1;
+        }
         // don't join if already present
         if (readyPlayers.containsKey(player)) return false;
         readyPlayers.put(player, false);
@@ -92,6 +98,9 @@ public class Lobby implements ForwardingAudience {
     // Wrapper method for joining a team
     public boolean joinTeam(Player player, int teamID) {
         if (teamID < 0 || teamID > 2) return false;
+        // don't allow them to join a team that's full
+        if (lobbyTeams[teamID].getSize() >= format.getMaxPlayersPerTeam() && teamID != lobbyTeams.length - 1)
+            return false;
         if (activeMatch != null && !activeMatch.joinTeam(player, teamID)) {
             return false;
         }
@@ -134,6 +143,8 @@ public class Lobby implements ForwardingAudience {
             return false;
         if (readyPlayers.remove(player) == null)
             return false;
+        if (activeMatch != null)
+            Brickball.getInstance().getMatchManager().leaveMatch(player);
         for (Team team : lobbyTeams) team.removePlayer(player);
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         if (isEmpty())
@@ -170,6 +181,8 @@ public class Lobby implements ForwardingAudience {
     private boolean createAndStartMatch() {
         if (activeMatch != null) return false;
         if (nextMap == null) return false;
+        if (lobbyTeams[0].getSize() < format.getMinPlayersPerTeam() || lobbyTeams[1].getSize() < format.getMinPlayersPerTeam())
+            return false;
         activeMatch = Brickball.getInstance().getMatchManager().createMatch(nextMap, 1);
         if (activeMatch == null) return false;
         // Overwrite settings
@@ -199,6 +212,8 @@ public class Lobby implements ForwardingAudience {
     }
 
     public boolean shutdown() {
+        for (Player player : readyPlayers.keySet())
+            leave(player);
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().endMatch(activeMatch);
         Brickball.getInstance().getLobbyList().unregisterLobby(this);

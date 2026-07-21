@@ -33,4 +33,9 @@ public class LobbyList {
             playerMap.remove((Player) audience);
         return lobbies.remove(lobby);
     }
+
+    public void shutdownAll() {
+        for (Lobby lobby : lobbies)
+            lobby.shutdown();
+    }
 }
