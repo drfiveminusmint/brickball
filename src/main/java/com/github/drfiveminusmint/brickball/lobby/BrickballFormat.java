@@ -13,6 +13,7 @@ import java.util.logging.Level;
 
 public class BrickballFormat {
     private final String name;
+    private final boolean isRated;
     private final int maxPlayers;
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
@@ -22,6 +23,7 @@ public class BrickballFormat {
         if (name == null)
             throw new IllegalArgumentException("All Brickball formats must have 'name' defined.");
         this.maxPlayers = section.getInt("maxPlayers", 99);
+        this.isRated = section.getBoolean("isRated", false);
         // if there is no such section, this will return a clone of the default settings
         this.settings = new MatchSettings(section.getConfigurationSection("overrideSettings"));
         // an empty map list indicates all maps are allowed
@@ -36,6 +38,8 @@ public class BrickballFormat {
     }
 
     public String getName() { return name; }
+
+    public boolean getIsRated() {return isRated;}
 
     public int getMaxPlayers() { return maxPlayers; }
 

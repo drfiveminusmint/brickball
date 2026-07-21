@@ -49,5 +49,10 @@ public class ArenaRestockingTask implements PriorityTask {
             return priority - task.getPriority();
         return 0;
     }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
 }
 

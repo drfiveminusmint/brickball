@@ -1,18 +1,21 @@
 package com.github.drfiveminusmint.brickball.scheduling;
 
-import com.github.drfiveminusmint.brickball.match.BrickballMatch;
+import com.github.drfiveminusmint.brickball.stats.FormatStats;
 import org.jetbrains.annotations.NotNull;
 
-// Used to ensure matches only start after the arena has been built
-public class MatchStartTask implements SyncTask{
+import java.io.File;
 
-    private final BrickballMatch match;
+public class SaveStatsTask implements IOTask {
     private final int priority;
+    private final File file;
+    private final FormatStats formatStats;
 
-    public MatchStartTask(BrickballMatch match, int priority) {
-        this.match = match;
+    public SaveStatsTask(int priority, FormatStats origin, File destination) {
         this.priority = priority;
+        this.file = destination;
+        this.formatStats = origin;
     }
+
     @Override
     public int getPriority() {
         return priority;
@@ -20,14 +23,14 @@ public class MatchStartTask implements SyncTask{
 
     @Override
     public int compareTo(@NotNull Object o) {
-        if (o instanceof SyncTask task)
+        if (o instanceof PriorityTask task)
             return priority - task.getPriority();
         return 0;
     }
 
     @Override
     public void run() {
-        match.startMatch();
+        formatStats.writeToFile(file);
     }
 
     @Override

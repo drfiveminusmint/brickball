@@ -44,4 +44,9 @@ public class RegionCleanupTask implements SyncTask {
     }
     @Override
     public int getPriority() { return priority; }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
 }

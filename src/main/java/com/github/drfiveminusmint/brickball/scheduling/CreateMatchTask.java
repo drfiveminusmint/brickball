@@ -38,4 +38,9 @@ public class CreateMatchTask implements SyncTask {
             return priority - task.getPriority();
         return 0;
     }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
 }

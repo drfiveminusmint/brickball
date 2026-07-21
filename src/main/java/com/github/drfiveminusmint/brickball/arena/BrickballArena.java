@@ -1,6 +1,7 @@
 package com.github.drfiveminusmint.brickball.arena;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.scheduling.*;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.github.drfiveminusmint.brickball.util.WGUtils;
@@ -8,15 +9,8 @@ import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldguard.WorldGuard;
@@ -26,10 +20,7 @@ import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
 import org.bukkit.Location;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Level;
 
 public class BrickballArena {
@@ -61,9 +52,10 @@ public class BrickballArena {
         templateID = template.getID();
     }
 
-    public void generateArena(int priority) {
+    public void generateArena(int priority, BrickballMatch notifyMatch) {
         File directory = new File(Brickball.getTemplatesFolder(), templateID);
-        for (File f : Objects.requireNonNull(directory.listFiles(pathname -> {
+        // get all files
+        List<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(directory.listFiles(pathname -> {
             try {
                 if (pathname.getName().contains(".schem"))
                     return true;
@@ -71,13 +63,12 @@ public class BrickballArena {
                 return false;
             }
             return false;
-        }))) {
-            Brickball.getInstance().getScheduler().submitTask(new SchematicLoadTask(
-                    f,
-                    gameWorld,
-                    masterRegion.getMinimumPoint(),
-                    priority));
-        }
+        }))));
+        Brickball.getInstance().getScheduler().submitTask(new ArenaLoadTask(files,
+                gameWorld,
+                masterRegion.getMinimumPoint(),
+                priority,
+                notifyMatch));
     }
 
     // Deconstruct the physical map and remove all regions

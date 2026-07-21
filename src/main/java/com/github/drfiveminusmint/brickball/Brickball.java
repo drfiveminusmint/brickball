@@ -3,13 +3,16 @@ package com.github.drfiveminusmint.brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.command.BrickballCommand;
-import com.github.drfiveminusmint.brickball.listener.PlayerListener;
+import com.github.drfiveminusmint.brickball.events.listener.MatchEndListener;
+import com.github.drfiveminusmint.brickball.events.listener.PlayerListener;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.LobbyList;
 import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
 import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
+import com.github.drfiveminusmint.brickball.scheduling.LoadStatsTask;
+import com.github.drfiveminusmint.brickball.stats.FormatStats;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -17,16 +20,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.logging.Level;
 
 public final class Brickball extends JavaPlugin {
     private static Brickball instance;
-    private static File templatesFolder;
+    private static File templatesFolder, statsFolder;
     private TemplateManager templateManager;
     private MatchManager matchManager;
     private LobbyList lobbyList;
     private ArrayList<BrickballFormat> formats = new ArrayList<>();
+    private HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap();
     private World matchWorld;
     private BrickballScheduler scheduler;
     private boolean doBackgroundArenaGeneration = false;
@@ -38,6 +43,7 @@ public final class Brickball extends JavaPlugin {
     public static File getTemplatesFolder() {
         return templatesFolder;
     }
+    public static File getStatsFolder() {return statsFolder;}
 
     public TemplateManager getTemplateManager() { return templateManager; }
 
@@ -53,6 +59,8 @@ public final class Brickball extends JavaPlugin {
         instance = this;
         templatesFolder = new File(this.getDataFolder().getAbsolutePath() + "/templates/");
         if (!templatesFolder.exists()) templatesFolder.mkdirs();
+        statsFolder = new File(getDataFolder(), "stats");
+        if (!statsFolder.exists()) statsFolder.mkdirs();
         // Save default formats if not present
         File formatsFolder = new File(getDataFolder(), "formats");
         if (!formatsFolder.exists()) {
@@ -80,13 +88,19 @@ public final class Brickball extends JavaPlugin {
             else
                 getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
         }
-        // Load formats
+        // Load formats and stats
         for (File file : formatsFolder.listFiles()) {
             YamlConfiguration formatConfig = new YamlConfiguration();
             try {
                 formatConfig.load(file);
                 BrickballFormat format = new BrickballFormat(formatConfig);
                 formats.add(format);
+                FormatStats formatStats = new FormatStats(format);
+                perFormatStats.put(format, formatStats);
+                // load stats from the CSV
+                File statsFile = new File(statsFolder, format.getName() + ".csv");
+                if (!statsFile.exists()) statsFile.createNewFile();
+                scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats));
                 getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
@@ -100,6 +114,7 @@ public final class Brickball extends JavaPlugin {
         }
         getCommand("brickball").setExecutor(new BrickballCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new MatchEndListener(), this);
 
         doBackgroundArenaGeneration = getConfig().getBoolean("preloadArenas", false);
         if (doBackgroundArenaGeneration) {
@@ -113,6 +128,7 @@ public final class Brickball extends JavaPlugin {
     public World getMatchWorld() {return matchWorld;}
     public void setMatchWorld(World world) {matchWorld = world;}
     public ArrayList<BrickballFormat> getFormats() { return formats; }
+    public FormatStats getFormatStats(BrickballFormat format) {return perFormatStats.get(format);}
 
     public boolean isBackgroundGenerationEnabled() {
         return doBackgroundArenaGeneration;

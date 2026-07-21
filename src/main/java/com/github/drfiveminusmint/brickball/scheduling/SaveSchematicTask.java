@@ -49,4 +49,9 @@ public class SaveSchematicTask implements IOTask {
     }
     @Override
     public int getPriority() { return priority; }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
 }

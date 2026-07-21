@@ -183,14 +183,7 @@ public class Lobby implements ForwardingAudience {
             }
         }
         activeMatch.setReturningLobby(this);
-        // submit this after all the other tasks have been submitted
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                Brickball.getInstance().getScheduler().submitTask(new MatchStartTask(activeMatch, 1));
-            }
-        }.runTaskLater(Brickball.getPlugin(Brickball.class), 20);
-
+        activeMatch.reportConfigDone(); // start as soon as arena is loaded
         return true;
     }
 

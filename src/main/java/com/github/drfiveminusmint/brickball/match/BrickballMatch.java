@@ -3,6 +3,8 @@ package com.github.drfiveminusmint.brickball.match;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.BrickballArena;
+import com.github.drfiveminusmint.brickball.events.event.MatchEndEvent;
+import com.github.drfiveminusmint.brickball.events.event.MatchStartEvent;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.scheduling.TimerUpdateHelper;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
@@ -13,7 +15,6 @@ import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -47,6 +48,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class BrickballMatch implements ForwardingAudience {
     private final int matchID;
@@ -56,6 +58,7 @@ public class BrickballMatch implements ForwardingAudience {
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
     private final String[] teamNames = {"Team 1", "Team 2", "Spectators"};
     private final HashSet<Player> players = new HashSet<>();
+    private final HashSet<Player> leavers = new HashSet<>();
     private final BossBar timerBar = Bukkit.createBossBar("", BarColor.YELLOW, BarStyle.SEGMENTED_20);
     private final BossBar shotClockBar = Bukkit.createBossBar("", BarColor.RED, BarStyle.SEGMENTED_10);
     private final BrickballArena arena;
@@ -92,11 +95,15 @@ public class BrickballMatch implements ForwardingAudience {
         matchScoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
         matchScoreObjective.setAutoUpdateDisplay(true);
         shotClockBar.setVisible(false);
-        arena.generateArena(priority);
+        arena.generateArena(priority, this);
     }
 
     public boolean startMatch () {
         if (state == MatchState.RUNNING || state == MatchState.STOPPING) return false;
+        MatchStartEvent event = new MatchStartEvent(this, returningLobby.getFormat(), Brickball.getInstance().getTemplateManager().findTemplate(arena.getTemplateID()));
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
+        stopShotClock();
         timeLimit = settings.getInt(MatchSettings.Setting.TIMER);
         shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
         timeHelper = new TimerUpdateHelper(this);
@@ -277,6 +284,7 @@ public class BrickballMatch implements ForwardingAudience {
                 else
                     host = null;
             }
+            leavers.add(player);
             return true;
         }
         return false;
@@ -294,6 +302,9 @@ public class BrickballMatch implements ForwardingAudience {
         teams[teamID].addPlayer(player);
         if (state == MatchState.PAUSED)
             setupPlayer(player, teamID);
+        // Remove them from the leavers list if present
+        if (teamID != teams.length-1)
+            leavers.remove(player);
         return true;
     }
 
@@ -324,6 +335,7 @@ public class BrickballMatch implements ForwardingAudience {
         if (returningLobby != null)
             returningLobby.returnPlayersToLobby();
         players.clear();
+        leavers.clear();
         // Prevent a resource leak
         try {
             timeHelper.cancel();
@@ -342,6 +354,7 @@ public class BrickballMatch implements ForwardingAudience {
         if (returningLobby != null)
             returningLobby.returnPlayersToLobby();
         players.clear();
+        leavers.clear();
         host = null;
         // reset scores
         matchScoreObjective.getScore(teamNames[0]).setScore(0);
@@ -382,6 +395,24 @@ public class BrickballMatch implements ForwardingAudience {
     public void reportScore(Player scorer) {
         if (!scores.containsKey(scorer)) scores.put(scorer, new Counter());
         scores.get(scorer).increment();
+    }
+
+    public void reportLoadingProgress(int current, int max) {
+        if (current == max)
+            if (state == MatchState.LOADING) // don't start unless config is also done
+                startMatch();
+            else
+                arena.built = true;
+            Brickball.getInstance().getLogger().log(Level.INFO, String.format("Loading match on %s %d/%d", arena.getTemplateID(), current, max));
+    }
+
+    public void reportConfigDone() {
+        // should never be arena.loaded and Loading, but let's be safe
+        if (arena.built && (state == MatchState.PREPARING || state == MatchState.LOADING))
+            startMatch();
+        // config finished before arena loaded
+        else if (state == MatchState.PREPARING)
+            state = MatchState.LOADING;
     }
 
     private void setupPlayer(Player player, int team) {
@@ -499,8 +530,10 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     private void endMatch() {
+        // Determine winner and whether it was a tie
         int winningTeam = 0;
-        if (matchScoreObjective.getScore(teamNames[0]).getScore() == matchScoreObjective.getScore(teamNames[1]).getScore())
+        boolean tied = matchScoreObjective.getScore(teamNames[0]).getScore() == matchScoreObjective.getScore(teamNames[1]).getScore();
+        if (tied)
             sendMessage(Component.text("[Brickball] The match ended in a tie!").color(NamedTextColor.GOLD));
         else {
             winningTeam = (matchScoreObjective.getScore(teamNames[0]).getScore() > matchScoreObjective.getScore(teamNames[1]).getScore()) ? 0 : 1;
@@ -508,6 +541,17 @@ public class BrickballMatch implements ForwardingAudience {
         }
         displayStats(players);
         pause(false);
+        MatchResult result = new MatchResult(
+                teams[winningTeam],
+                matchScoreObjective.getScore(teamNames[winningTeam]).getScore(),
+                teams[1-winningTeam],
+                matchScoreObjective.getScore(teamNames[1-winningTeam]).getScore(),
+                leavers,
+                kills, deaths, scores);
+        // Report Results
+        MatchEndEvent event = new MatchEndEvent(this, returningLobby.getFormat(), result);
+        Bukkit.getPluginManager().callEvent(event);
+        // Clean up the match and return players to lobby
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -589,6 +633,7 @@ public class BrickballMatch implements ForwardingAudience {
     public void stopShotClock() {shotClock = -1;}
 
     public boolean getIsHost(Player other) {return other.equals(host);}
+    public boolean getArenaBuilt() {return arena.built;}
 
     public void setReturningLobby(Lobby lobby) { returningLobby = lobby; }
 }

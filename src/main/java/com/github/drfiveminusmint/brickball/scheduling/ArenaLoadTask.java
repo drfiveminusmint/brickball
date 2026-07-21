@@ -1,35 +1,41 @@
 package com.github.drfiveminusmint.brickball.scheduling;
 
 import com.github.drfiveminusmint.brickball.Brickball;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.WorldEditException;
+import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
-public class SchematicLoadTask implements SyncTask {
-    private int priority = 0;
-    private File path;
+public class ArenaLoadTask implements SyncTask {
+    private int priority, count;
+    private List<File> files;
+    private final List<ClipboardHolder> loadedSchematics;
+    private final List<BlockVector3> offsets;
     private World world;
-    private BlockVector3 location;
+    private BlockVector3 origin;
+    private final @Nullable BrickballMatch notifyMatch;
 
-    public SchematicLoadTask(File file, World gameWorld, BlockVector3 origin, int prio) {
-        path = file;
-        priority = prio;
-        location = origin;
-        world = gameWorld;
+    public ArenaLoadTask(List<File> files, World world, BlockVector3 origin, int priority, @Nullable BrickballMatch notifyMatch) {
+        this.files = files;
+        this.priority = priority;
+        this.origin = origin;
+        this.world = world;
+        this.notifyMatch = notifyMatch;
+        this.count = files.size();
+        this.loadedSchematics = new ArrayList<>(files.size());
+        this.offsets = new ArrayList<>(files.size());
     }
     @Override
     public int compareTo(@NotNull Object o) {
@@ -39,6 +45,7 @@ public class SchematicLoadTask implements SyncTask {
     }
     @Override
     public void run() {
+        File path = files.get(files.size()-count--);
         Clipboard clipboard;
         ClipboardFormat format = ClipboardFormats.findByFile(path);
         if (format == null)
@@ -56,10 +63,17 @@ public class SchematicLoadTask implements SyncTask {
             return;
         }
         String[] coords = path.getName().split("-");
-        location = location.add(Integer.parseInt(coords[0])*16, 0, Integer.parseInt(coords[1])*16);
-        // Tell the main thread worker to paste this schematic
-        Brickball.getInstance().getScheduler().submitTask(new SchematicPasteTask(new ClipboardHolder(clipboard), world, location, priority));
+        offsets.add(origin.add(Integer.parseInt(coords[0])*16, 0, Integer.parseInt(coords[1])*16));
+        loadedSchematics.add(new ClipboardHolder(clipboard));
+        // If we're done, tell the main thread worker to paste these schematics
+        if (count == 0)
+            Brickball.getInstance().getScheduler().submitTask(new SchematicsPasteTask(loadedSchematics, offsets, world, priority, notifyMatch));
     }
     @Override
     public int getPriority() { return priority; }
+
+    @Override
+    public int getCount() {
+        return count;
+    }
 }

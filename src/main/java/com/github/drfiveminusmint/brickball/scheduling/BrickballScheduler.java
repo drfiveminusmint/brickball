@@ -17,17 +17,11 @@ public class BrickballScheduler {
 
     public void shutdown() {
         // shut down our task managers
-        syncTasks.cancel();
-        fileTasks.cancel();
-        miscTasks.cancel();
+        syncTasks.completeAndShutdown();
+        fileTasks.completeAndShutdown();
+        miscTasks.completeAndShutdown();
 
-        // force all tasks to complete synchronously
-        // tasks may submit other tasks, so we have to run this multiple times
-        while (syncTasks.hasTask() || fileTasks.hasTask() || miscTasks.hasTask()) {
-            miscTasks.forceCompleteAll();
-            fileTasks.forceCompleteAll();
-            syncTasks.forceCompleteAll();
-        }
+        syncTasks = null; fileTasks = null; miscTasks = null;
     }
 
     // Sort submitted tasks

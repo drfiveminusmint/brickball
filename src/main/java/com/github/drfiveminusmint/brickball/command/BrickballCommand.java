@@ -8,6 +8,7 @@ import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
+import com.github.drfiveminusmint.brickball.stats.FormatStats;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import net.kyori.adventure.text.Component;
@@ -15,6 +16,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -53,7 +55,45 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("unpause")) return unpauseCommand(player, args);
         if (args[0].equalsIgnoreCase("ready") || args[0].equalsIgnoreCase("unready")) return readyCommand(player, args);
         if (args[0].equalsIgnoreCase("invite")) return inviteCommand(player, args);
+        if (args[0].equalsIgnoreCase("stats")) return statsCommand(player, args);
         return false;
+    }
+
+    private boolean statsCommand(Player player, String[] args) {
+        if (args.length < 2)
+            player.sendMessage("Usage: /brickball stats (format) <player>");
+        BrickballFormat format = null;
+        for (BrickballFormat candidate : Brickball.getInstance().getFormats())
+            if (candidate.getName().equalsIgnoreCase(args[1])) {
+                format = candidate;
+                break;
+            }
+        if (format == null) {
+            Component message = Component.text(args[1], NamedTextColor.DARK_RED)
+                    .append(Component.text(" is not an available Brickball format. Available formats are: ", NamedTextColor.RED));
+            for (BrickballFormat candidate : Brickball.getInstance().getFormats()) {
+                message = message.append(Component.text(candidate.getName(), NamedTextColor.AQUA))
+                        .append(Component.text(" "));
+            }
+            player.sendMessage(message);
+            return true;
+        }
+        OfflinePlayer target;
+        if (args.length == 2)
+            target = player;
+        else
+            target = Bukkit.getOfflinePlayer(args[2]);
+        if (target.getName() == null) {
+            player.sendMessage(Component.text(String.format("Player %s not found.", args[2]), NamedTextColor.RED));
+            return true;
+        }
+        if (Brickball.getInstance().getFormatStats(format).getPlayerStat(target, FormatStats.TrackedStat.WINS) == -1) {
+            player.sendMessage(Component.text(target.getName(), NamedTextColor.YELLOW)
+                    .append(Component.text(" has never played ", NamedTextColor.RED))
+                    .append(Component.text(format.getName(), NamedTextColor.AQUA)));
+        }
+        Brickball.getInstance().getFormatStats(format).displayStats(player, target);
+        return true;
     }
 
     private boolean inviteCommand(Player player, String[] args) {
@@ -205,13 +245,6 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("Error: Match world not set. Set it with /brickball setWorld");
             return true;
         }
-        /*
-        ArenaTemplate template = Brickball.getInstance().getTemplateManager().findTemplate(args[1]);
-        if (template == null) {
-            player.sendMessage(String.format("Couldn't find arena template: %s", args[1]));
-            return true;
-        }
-        */
         BrickballFormat format = null;
         for (BrickballFormat candidate : Brickball.getInstance().getFormats())
             if (candidate.getName().equalsIgnoreCase(args[1])) {
@@ -453,7 +486,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(player.getName());
             return result;
         }
-        if (args[0].equalsIgnoreCase("create")) {
+        if (args[0].equalsIgnoreCase("create") || args[0].equalsIgnoreCase("stats")) {
             List<String> result = new ArrayList<>();
             for (BrickballFormat format : Brickball.getInstance().getFormats())
                 result.add(format.getName());
@@ -477,7 +510,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of("create", "join", "jointeam", "leave", "map", "start", "teamcolor", "setting", "setworld", "admin", "pause", "unpause");
+        if (args.length == 1) return List.of( "admin", "create", "join", "jointeam", "leave", "map", "pause", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
         return null;
     }
 

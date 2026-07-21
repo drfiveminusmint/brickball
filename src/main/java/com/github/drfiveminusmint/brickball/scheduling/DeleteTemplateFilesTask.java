@@ -39,4 +39,9 @@ public class DeleteTemplateFilesTask implements IOTask {
             child.delete();
         target.delete();
     }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
 }

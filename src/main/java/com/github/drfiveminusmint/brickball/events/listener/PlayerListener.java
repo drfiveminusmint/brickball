@@ -1,4 +1,4 @@
-package com.github.drfiveminusmint.brickball.listener;
+package com.github.drfiveminusmint.brickball.events.listener;
 
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
@@ -10,7 +10,6 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -147,7 +146,7 @@ public class PlayerListener implements Listener {
     public void onCrossbowFire(EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (Brickball.getInstance().getMatchManager().getMatchByPlayer(player) == null) return;
-        if (player.getInventory().contains(Material.BRICK)) {
+        if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)) {
             if (event.getBow().getItemMeta() instanceof CrossbowMeta crossbowMeta) {
                 crossbowMeta.addChargedProjectile(new ItemStack(Material.ARROW));
                 event.getBow().setItemMeta(crossbowMeta);
