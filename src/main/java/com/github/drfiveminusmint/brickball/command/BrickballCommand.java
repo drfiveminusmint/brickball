@@ -93,6 +93,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text(target.getName(), NamedTextColor.YELLOW)
                     .append(Component.text(" has never played ", NamedTextColor.RED))
                     .append(Component.text(format.getName(), NamedTextColor.AQUA)));
+            return true;
         }
         Brickball.getInstance().getFormatStats(format).displayStats(player, target);
         return true;
@@ -524,7 +525,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of( "admin", "create", "join", "jointeam", "leave", "map", "pause", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
+        if (args.length == 1) return List.of( "admin", "create", "join", "jointeam", "leave", "map", "pause", "ready", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
         return null;
     }
 

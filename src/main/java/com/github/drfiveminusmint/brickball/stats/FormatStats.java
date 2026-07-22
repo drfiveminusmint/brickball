@@ -44,16 +44,16 @@ public class FormatStats {
             // get average rating
             int winnerRating = 0, loserRating = 0;
             for (Player player : result.winningTeam)
-                winnerRating += getPlayerStatsSafe(player.getUniqueId()).get(TrackedStat.RATING);
+                winnerRating += getOrCreatePlayerStats(player.getUniqueId()).get(TrackedStat.RATING);
             winnerRating /= result.winningTeam.size();
             if (!result.losingTeam.isEmpty()) {
                 for (Player player : result.losingTeam)
-                    loserRating += getPlayerStatsSafe(player.getUniqueId()).get(TrackedStat.RATING);
+                    loserRating += getOrCreatePlayerStats(player.getUniqueId()).get(TrackedStat.RATING);
                 loserRating /= result.losingTeam.size();
             } else {
                 // fallback 1: use leavers as the losing team
                 for (Player player : result.leavers)
-                    loserRating += getPlayerStatsSafe(player.getUniqueId()).get(TrackedStat.RATING);
+                    loserRating += getOrCreatePlayerStats(player.getUniqueId()).get(TrackedStat.RATING);
                 if (result.leavers.isEmpty())
                     // fallback 2 - if this happens, something has gone terribly wrong, but we still don't want a crash
                     loserRating = winnerRating;
@@ -71,6 +71,8 @@ public class FormatStats {
 
             // distribute rating gain/loss
             int winningPoints = delta * result.winningTeam.size();
+            if (result.winningTeam.isEmpty())
+                winningPoints = -10;
             int losingPoints = -winningPoints;
             if (!result.leavers.isEmpty()) {
                 // leavers absorb half the total losses
@@ -82,8 +84,12 @@ public class FormatStats {
                         losingPoints = (losingPoints/2) + (losingPoints%2);
                     }
                 } else {
-                    distributePoints(result.leavers, winningPoints/2);
-                    winningPoints = (winningPoints/2) + (winningPoints%2);
+                    if (result.winningTeam.isEmpty()) {
+                        distributePoints(result.leavers, winningPoints);
+                    } else {
+                        distributePoints(result.leavers, winningPoints/2);
+                        winningPoints = (winningPoints/2) + (winningPoints%2);
+                    }
                 }
             }
             distributePoints(result.winningTeam, winningPoints);
@@ -91,7 +97,7 @@ public class FormatStats {
         }
         // sum up other stats
         for (Player player : result.winningTeam) {
-            PlayerStats stats = getPlayerStatsSafe(player.getUniqueId());
+            PlayerStats stats = getOrCreatePlayerStats(player.getUniqueId());
             if (result.winningScore != result.losingScore)
                 stats.adjust(TrackedStat.WINS, 1);
             else
@@ -100,7 +106,7 @@ public class FormatStats {
             stats.adjust(TrackedStat.ROUND_LOSSES, result.losingScore);
         }
         for (Player player : result.losingTeam) {
-            PlayerStats stats = getPlayerStatsSafe(player.getUniqueId());
+            PlayerStats stats = getOrCreatePlayerStats(player.getUniqueId());
             if (result.winningScore != result.losingScore)
                 stats.adjust(TrackedStat.LOSSES, 1);
             else
@@ -110,14 +116,14 @@ public class FormatStats {
         }
         // leavers always lose
         for (Player player : result.leavers)
-            getPlayerStatsSafe(player.getUniqueId()).adjust(TrackedStat.LOSSES, 1);
+            getOrCreatePlayerStats(player.getUniqueId()).adjust(TrackedStat.LOSSES, 1);
         // sum up kills, deaths, points
         for (Player player : result.points.keySet())
-            getPlayerStatsSafe(player.getUniqueId()).adjust(TrackedStat.POINTS, result.points.get(player).value());
+            getOrCreatePlayerStats(player.getUniqueId()).adjust(TrackedStat.POINTS, result.points.get(player).value());
         for (Player player : result.kills.keySet())
-            getPlayerStatsSafe(player.getUniqueId()).adjust(TrackedStat.KILLS, result.kills.get(player).value());
+            getOrCreatePlayerStats(player.getUniqueId()).adjust(TrackedStat.KILLS, result.kills.get(player).value());
         for (Player player : result.deaths.keySet())
-            getPlayerStatsSafe(player.getUniqueId()).adjust(TrackedStat.DEATHS, result.deaths.get(player).value());
+            getOrCreatePlayerStats(player.getUniqueId()).adjust(TrackedStat.DEATHS, result.deaths.get(player).value());
 
         // Save stats to file
         Brickball.getInstance().getScheduler().submitTask(new SaveStatsTask(-1, this, new File(Brickball.getStatsFolder(), format.getName() + ".csv")));
@@ -130,11 +136,11 @@ public class FormatStats {
                 .append(Component.text(" in format ", NamedTextColor.GOLD))
                 .append(Component.text(format.getName(), NamedTextColor.AQUA)));
         for (TrackedStat stat : TrackedStat.values())
-            requester.sendMessage(String.format("%s: %d", stat.name(), getPlayerStatsSafe(tracked.getUniqueId()).get(stat)));
+            requester.sendMessage(String.format("%s: %d", stat.name(), getPlayerStat(tracked, stat)));
     }
 
     // Gets a player's stat sheet if present, and creates one for them if absent.
-    private @NotNull PlayerStats getPlayerStatsSafe(UUID uuid) {
+    private @NotNull PlayerStats getOrCreatePlayerStats(UUID uuid) {
         if (perPlayerStats.containsKey(uuid)) return perPlayerStats.get(uuid);
         PlayerStats newStats = new PlayerStats();
         perPlayerStats.put(uuid, newStats);
@@ -166,7 +172,7 @@ public class FormatStats {
         int remainder = (points % players.size());
         int quotient = (points / players.size());
         for (Player player : players) {
-            PlayerStats stats = getPlayerStatsSafe(player.getUniqueId());
+            PlayerStats stats = getOrCreatePlayerStats(player.getUniqueId());
             int old = stats.get(TrackedStat.RATING);
             if (remainder-- > 0)
                 stats.adjust(TrackedStat.RATING, quotient+1);
@@ -231,6 +237,7 @@ public class FormatStats {
 
             // Export data
             for (UUID uuid : perPlayerStats.keySet()) {
+                if (uuid == null) continue;
                 nextLine[0] = uuid.toString();
                 PlayerStats stats = perPlayerStats.get(uuid);
                 nextLine[1] = Bukkit.getOfflinePlayer(uuid).getName();

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.logging.Level;
 
 public class Lobby implements ForwardingAudience {
@@ -66,7 +67,9 @@ public class Lobby implements ForwardingAudience {
         cosmeticObjective.getScore("Spectators").setScore(0);
         cosmeticObjective.getScore("Ready").setScore(0);
         // set initial map
-        nextMap = format.getValidMaps().iterator().next();
+        nextMap = (ArenaTemplate) format.getValidMaps().toArray()
+                [new Random(System.currentTimeMillis()).nextInt(format.getValidMaps().size())];
+
     }
 
     public Lobby(BrickballFormat format) { this(format, false); }
@@ -92,6 +95,7 @@ public class Lobby implements ForwardingAudience {
         player.sendMessage(Component.text("Current map: ", NamedTextColor.GOLD).append(Component.text(nextMap.getID(), NamedTextColor.AQUA)));
         player.sendMessage(Component.text("[Join Team 1]", teamColors[0].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 1")));
         player.sendMessage(Component.text("[Join Team 2]", teamColors[1].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 2")));
+        player.sendMessage(Component.text("[Ready]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball ready")));
         return joinTeam(player, startingTeamID);
     }
 
