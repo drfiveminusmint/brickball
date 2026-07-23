@@ -269,6 +269,9 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     boolean leaveMatch(Player player) {
+        // unless they're a spectator, add them to the list of leavers
+        if (!teams[teams.length-1].hasPlayer(player))
+            leavers.add(player);
         for (Team team : teams)
             team.removePlayer(player);
         // Don't take the brick with you when leaving
@@ -286,9 +289,6 @@ public class BrickballMatch implements ForwardingAudience {
                 else
                     host = null;
             }
-            // unless they're a spectator, add them to the list of leavers
-            if (getPlayerTeam(player) != teams[teams.length-1])
-                leavers.add(player);
             return true;
         }
         return false;
