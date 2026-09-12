@@ -284,7 +284,7 @@ public class BrickballMatch implements ForwardingAudience {
             if (host.equals(player)) {
                 if (!players.isEmpty()) {
                     host = (Player) players.toArray()[0];
-                    host.sendMessage(Component.text("[Brickball] You are now the host."));
+                    host.sendMessage(Component.text("[Brickball] You are now the match host."));
                 }
                 else
                     host = null;
@@ -644,5 +644,8 @@ public class BrickballMatch implements ForwardingAudience {
     public boolean getIsHost(Player other) {return other.equals(host);}
     public boolean getArenaBuilt() {return arena.built;}
 
-    public void setReturningLobby(Lobby lobby) { returningLobby = lobby; }
+    public void setReturningLobby(Lobby lobby) {
+        host = returningLobby.getHost();
+        returningLobby = lobby;
+    }
 }

@@ -20,7 +20,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerAttemptPickupItemEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.potion.PotionEffect;
@@ -58,10 +62,9 @@ public class PlayerListener implements Listener {
             if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
                 player.getInventory().setItemInOffHand(null);
             player.getKiller().getInventory().addItem(new ItemStack(Material.BRICK, 1));
-            player.getKiller().setGlowing(true);
-            player.getKiller().addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
-            playerMatch.sendMessage(player.getKiller().displayName().append(Component.text(" has the BRICK!",NamedTextColor.WHITE)));
-            // Start shot clock (if enabled)
+            // notify players and give effects
+            doBrickRecieve(player.getKiller(), playerMatch);
+            // start shot clock if enabled
             playerMatch.startShotClock();
         } else if ((playerMatch.getSettings().getBoolean(MatchSettings.Setting.BRICK_FUMBLING) || !playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) && (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))) {
             // Reset brick if fumbling is enabled or respawning is disabled
@@ -126,7 +129,7 @@ public class PlayerListener implements Listener {
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(event.getPlayer());
         if (playerMatch == null) return;
         // Don't allow players to drop the brick
-        playerMatch.sendMessage(Component.text("[BRICK] You cannot be rid of me so easily..."));
+        event.getPlayer().sendMessage(Component.text("[BRICK] You cannot be rid of me so easily..."));
         event.setCancelled(true);
     }
 
@@ -136,10 +139,7 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (playerMatch == null) return;
-        playerMatch.sendMessage(player.displayName().append(Component.text(" has the BRICK!",NamedTextColor.WHITE)));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
-        player.setGlowing(true);
-        // Start shot clock if enabled.
+        doBrickRecieve(player, playerMatch);
         playerMatch.startShotClock();
     }
 
@@ -182,9 +182,7 @@ public class PlayerListener implements Listener {
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
             otherPlayer.getInventory().addItem(new ItemStack(Material.BRICK, 1));
-            otherPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
-            otherPlayer.setGlowing(true);
-            playerMatch.sendMessage(otherPlayer.displayName().append(Component.text(" has the brick!",NamedTextColor.WHITE)));
+            doBrickRecieve(otherPlayer, playerMatch);
         }
     }
 
@@ -194,5 +192,15 @@ public class PlayerListener implements Listener {
         Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(event.getPlayer());
         if (lobby != null)
             lobby.leave(event.getPlayer());
+    }
+
+    // effects that trigger when a player recieves the brick by any means
+    private void doBrickRecieve(Player player, BrickballMatch playerMatch)
+    {
+        player.setGlowing(true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
+        player.playSound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.BLOCK, 10f, 1f));
+        player.sendActionBar(Component.text("You have the BRICK!").color(NamedTextColor.GREEN));
+        playerMatch.sendMessage(player.displayName().append(Component.text(" has the BRICK!",NamedTextColor.WHITE)));
     }
 }
