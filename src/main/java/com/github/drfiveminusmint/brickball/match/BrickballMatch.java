@@ -645,7 +645,7 @@ public class BrickballMatch implements ForwardingAudience {
     public boolean getArenaBuilt() {return arena.built;}
 
     public void setReturningLobby(Lobby lobby) {
-        host = returningLobby.getHost();
         returningLobby = lobby;
+        host = returningLobby.getHost();
     }
 }
