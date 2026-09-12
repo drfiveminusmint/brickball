@@ -199,7 +199,7 @@ public class PlayerListener implements Listener {
     {
         player.setGlowing(true);
         player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, PotionEffect.INFINITE_DURATION, 0));
-        player.playSound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.BLOCK, 10f, 1f));
+        player.playSound(Sound.sound(Key.key("item.goat_horn.sound.0"), Sound.Source.BLOCK, 10f, 1f));
         player.sendActionBar(Component.text("You have the BRICK!").color(NamedTextColor.GREEN));
         playerMatch.sendMessage(player.displayName().append(Component.text(" has the BRICK!",NamedTextColor.WHITE)));
     }
