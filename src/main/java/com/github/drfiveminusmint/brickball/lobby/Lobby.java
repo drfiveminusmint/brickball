@@ -153,8 +153,15 @@ public class Lobby implements ForwardingAudience {
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         if (isEmpty())
             shutdown();
-        else
+        else {
+            if (player.equals(host)) {
+                host = (Player) readyPlayers.keySet().toArray()[0];
+                sendMessage(Component.text("[Brickball] ", NamedTextColor.GOLD)
+                        .append(host.displayName())
+                        .append(Component.text(" is now the host", NamedTextColor.GOLD)));
+            }
             tryStartMatch(false);
+        }
         return true;
     }
 
