@@ -125,11 +125,9 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
-        if (!event.getItemDrop().getItemStack().getType().equals(Material.BRICK)) return;
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(event.getPlayer());
         if (playerMatch == null) return;
-        // Don't allow players to drop the brick
-        event.getPlayer().sendMessage(Component.text("[BRICK] You cannot be rid of me so easily..."));
+        // Don't allow players to drop items while in a match
         event.setCancelled(true);
     }
 
