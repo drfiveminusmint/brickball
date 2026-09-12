@@ -644,8 +644,8 @@ public class BrickballMatch implements ForwardingAudience {
     public boolean getIsHost(Player other) {return other.equals(host);}
     public boolean getArenaBuilt() {return arena.built;}
 
-    public void setReturningLobby(Lobby lobby) {
+    public void setReturningLobby(@Nullable Lobby lobby) {
         returningLobby = lobby;
-        host = returningLobby.getHost();
+        if (lobby != null) host = lobby.getHost();
     }
 }
