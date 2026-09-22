@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.drfiveminusmint'
-version = 'Alpha-2.0'
+version = 'Alpha-2.1'
 description = "brick ball"
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
