@@ -160,6 +160,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
             return true;
         }
+        player.sendMessage(Component.text("Invite sent to ", NamedTextColor.AQUA).append(other.displayName()));
         lobby.invite(other, player);
         return true;
     }
@@ -317,6 +318,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You don't have permission to create ", NamedTextColor.RED)
                     .append(Component.text(format.getName(), NamedTextColor.AQUA))
                     .append(Component.text(" lobbies.", NamedTextColor.RED)));
+            return true;
         }
         String flags = "";
         if (args.length > 2 && args[2].charAt(0) == '-')

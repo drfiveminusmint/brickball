@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Level;
 
 public class Lobby implements ForwardingAudience {
@@ -137,7 +138,7 @@ public class Lobby implements ForwardingAudience {
                     .append(Component.text("%s has invited you to a ", NamedTextColor.GOLD))
                     .append(Component.text(format.getName(), NamedTextColor.YELLOW))
                     .append(Component.text(" lobby.", NamedTextColor.GOLD))
-                    .append(Component.text(" Click to join!", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/lobby join " + requester.getName()))));
+                    .append(Component.text(" Click to join!", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball join " + requester.getName()))));
         }
         return invited.add(otherPlayer);
     }
@@ -224,7 +225,10 @@ public class Lobby implements ForwardingAudience {
     }
 
     public boolean shutdown() {
+        Set<Player> cachedPlayers = new HashSet<>();
         for (Player player : readyPlayers.keySet())
+            cachedPlayers.add(player);
+        for (Player player : cachedPlayers)
             leave(player);
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().endMatch(activeMatch);
