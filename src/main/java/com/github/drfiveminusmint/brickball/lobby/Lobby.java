@@ -77,7 +77,7 @@ public class Lobby implements ForwardingAudience {
     // Join the lobby, starting as the specified team
     // Returns false if the player cannot join this lobby
     public boolean join (Player player, int startingTeamID) {
-        if (isPrivate && !invited.contains(player)) return false;
+        if (isPrivate && !invited.contains(player) && !isEmpty()) return false;
         // kick them to the spectators if their preferred team is full
         if (lobbyTeams[startingTeamID].getSize() >= format.getMaxPlayersPerTeam() && startingTeamID != lobbyTeams.length-1) {
             startingTeamID = lobbyTeams.length-1;
