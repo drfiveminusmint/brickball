@@ -129,7 +129,8 @@ public class Lobby implements ForwardingAudience {
                 return false;
             }
             if (invited.contains(otherPlayer)) {
-                requester.sendMessage(Component.text(String.format("%s is already invited.", otherPlayer.displayName()), NamedTextColor.RED));
+                requester.sendMessage(otherPlayer.displayName().color(NamedTextColor.RED)
+                        .append(Component.text(" is already invited.", NamedTextColor.RED)));
                 return false;
             }
             otherPlayer.sendMessage(requester.displayName()
