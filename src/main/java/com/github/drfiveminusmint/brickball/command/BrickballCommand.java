@@ -327,6 +327,7 @@ public class BrickballCommand implements TabExecutor {
                 .append(Component.text(" has created a ", NamedTextColor.GOLD))
                 .append(Component.text(format.getName(), NamedTextColor.YELLOW)).append(Component.text(" lobby. ", NamedTextColor.GOLD))
                 .append(Component.text("Click to join!", NamedTextColor.AQUA)).clickEvent(ClickEvent.runCommand("/brickball join " + player.getName())));
+        newLobby.invite(player, null);
         newLobby.join(player, 2); // start as spectator
         newLobby.setHost(player);
         player.sendMessage(Component.text("[Start Match]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball start")));
