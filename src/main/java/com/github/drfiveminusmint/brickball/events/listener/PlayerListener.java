@@ -40,7 +40,7 @@ public class PlayerListener implements Listener {
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
         if (playerMatch == null || playerMatch.getState() != MatchState.RUNNING || !player.getGameMode().equals(GameMode.ADVENTURE)) return;
         playerMatch.checkDeathRegions(player);
-        if (player.getInventory().contains(Material.BRICK))
+        if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
             playerMatch.checkScoring(player);
     }
 
@@ -75,7 +75,7 @@ public class PlayerListener implements Listener {
                 player.getInventory().setItemInOffHand(null);
             playerMatch.spawnBrick();
             playerMatch.stopShotClock();
-        } else if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.DEATH_TURNOVERS) && player.getInventory().contains(Material.BRICK)) {
+        } else if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.DEATH_TURNOVERS) && player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK)) {
             // Start a turnover if death turnovers is enabled
             player.removePotionEffect(PotionEffectType.WEAKNESS);
             player.setGlowing(false);
