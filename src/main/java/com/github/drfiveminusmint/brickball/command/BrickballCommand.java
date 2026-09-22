@@ -322,7 +322,8 @@ public class BrickballCommand implements TabExecutor {
         if (args.length > 2 && args[2].charAt(0) == '-')
             flags = args[2];
         Lobby newLobby = new Lobby(format, flags.contains("p"));
-        Bukkit.getServer().broadcast(Component.text("[Brickball] ", NamedTextColor.GOLD)
+        if (!flags.contains("p"))
+            Bukkit.getServer().broadcast(Component.text("[Brickball] ", NamedTextColor.GOLD)
                 .append(player.displayName())
                 .append(Component.text(" has created a ", NamedTextColor.GOLD))
                 .append(Component.text(format.getName(), NamedTextColor.YELLOW)).append(Component.text(" lobby. ", NamedTextColor.GOLD))
