@@ -11,11 +11,20 @@ commands:
     description: brick.
     usage: /brickball (create/join/leave/jointeam/map)
 permissions:
+  brickball.admin:
+    description: Allows the user to use Brickball admin commands.
+    default: op
+  brickball.cancel:
+    description: Allows the user to use Brickball admin commands.
+    default: op
   brickball.create:
     description: Allows the user to create Brickball matches.
     default: op
   brickball.debug:
     description: Allows the use of debug commands. Don't give this to players unless you know what you're doing.
+    default: op
+  brickball.host.override:
+    description: Allows the user to run commands in lobbies as if they were the host.
     default: op
   brickball.join:
     description: Allows the user to join other user's Brickball matches.
@@ -29,3 +38,5 @@ permissions:
   brickball.map.list:
     description: Allows the user to list saved Brickball maps.
     default: true
+  brickball.settings.override:
+    description: Allows the user to override settings in ranked modes

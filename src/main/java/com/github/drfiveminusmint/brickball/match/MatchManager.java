@@ -91,8 +91,10 @@ public class MatchManager {
 
     public void endMatch(BrickballMatch match) {
         endMatch(match, false);
+
     }
 
+    // end the match, ignoring stat tracking if cancelMatch is set
     // if forceCleanup is true, the map will always be cleaned up when the match is ended
     // otherwise standard freezing logic applies
     public void endMatch(BrickballMatch match, boolean forceCleanup) {

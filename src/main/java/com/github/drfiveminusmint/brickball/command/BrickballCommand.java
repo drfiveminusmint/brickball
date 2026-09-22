@@ -58,7 +58,53 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("ready") || args[0].equalsIgnoreCase("unready")) return readyCommand(player, args);
         if (args[0].equalsIgnoreCase("invite")) return inviteCommand(player, args);
         if (args[0].equalsIgnoreCase("stats")) return statsCommand(player, args);
+        if (args[0].equalsIgnoreCase("cancel")) return cancelCommand(player, args);
+        if (args[0].equalsIgnoreCase("host")) return hostCommand(player, args);
         return false;
+    }
+    private boolean hostCommand(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage("Usage: /brickball host (newhost)");
+            return true;
+        }
+        Player other = Bukkit.getPlayer(args[1]);
+        if (other == null) {
+            player.sendMessage(Component.text(String.format("Player %s not found.", args[1]), NamedTextColor.RED));
+            return true;
+        }
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null || !lobby.equals(Brickball.getInstance().getLobbyList().getLobbyByPlayer(other))) {
+            player.sendMessage(Component.text("Both players must be in the same Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (player != lobby.getHost() && !player.hasPermission("brickball.host.override")) {
+            player.sendMessage(Component.text("Only a lobby host can use this command.", NamedTextColor.RED));
+            return true;
+        }
+        return true;
+    }
+    private boolean cancelCommand(Player player, String[] args) {
+        if (!player.hasPermission("brickball.cancel")) return insufficientPermissions(player);
+        Player targetPlayer;
+        if (args.length == 1)
+            // when used without an argument, cancel the user's match
+            targetPlayer = player;
+        else {
+            targetPlayer = Bukkit.getPlayer(args[1]);
+            if (targetPlayer == null) {
+                player.sendMessage(Component.text(String.format("Player %s not found.", args[1]), NamedTextColor.RED));
+                return true;
+            }
+        }
+        // find the match to cancel
+        BrickballMatch targetMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(player);
+        if (targetMatch == null) {
+            player.sendMessage(Component.text(String.format("Player %s is not in a brickball match.", targetPlayer.displayName()), NamedTextColor.RED));
+            return true;
+        }
+        targetMatch.sendMessage(Component.text("[Brickball] The match was cancelled.", NamedTextColor.RED));
+        Brickball.getInstance().getMatchManager().endMatch(targetMatch,false);
+        return true;
     }
 
     private boolean statsCommand(Player player, String[] args) {
@@ -141,7 +187,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (!player.equals(lobby.getHost())) {
+        if (!player.equals(lobby.getHost()) && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("You can only change the map if you're the lobby host.", NamedTextColor.RED));
             return true;
         }
@@ -178,6 +224,7 @@ public class BrickballCommand implements TabExecutor {
     }
 
     public boolean adminCommand (Player player, String[] args) {
+        if (!player.hasPermission("brickball.admin")) return insufficientPermissions(player);
         if (args.length < 2) {
             player.sendMessage("Usage: /brickball admin (cleanworld/shutdown/reload)");
             return true;
@@ -204,7 +251,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (!player.equals(lobby.getHost())) {
+        if (!player.equals(lobby.getHost()) && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("You can only change the team colors if you're the lobby host.", NamedTextColor.RED));
             return true;
         }
@@ -359,7 +406,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (lobby.getHost() != player && !player.hasPermission("brickball.settings.override")) {
+        if (lobby.getHost() != player && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("Only the host can change match settings.", NamedTextColor.RED));
             return true;
         }
@@ -474,7 +521,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
             return true;
         }
-        if (player != lobby.getHost()) {
+        if (player != lobby.getHost() && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("Only a lobby host can use this command.", NamedTextColor.RED));
             return true;
         }
