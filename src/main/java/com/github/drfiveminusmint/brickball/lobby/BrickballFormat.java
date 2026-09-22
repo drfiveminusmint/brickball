@@ -16,6 +16,7 @@ public class BrickballFormat {
     private final int minPlayersPerTeam, maxPlayersPerTeam;
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
+    private final String requiredPermission;
 
     public BrickballFormat(ConfigurationSection section) {
         this.name = section.getString("name");
@@ -35,6 +36,7 @@ public class BrickballFormat {
             else
                 Brickball.getInstance().getLogger().log(Level.WARNING, String.format("Cannot find map '%s' for format '%s'.", s, name));
         }
+        this.requiredPermission = section.getString("requiredPermission", "");
     }
 
     public String getName() { return name; }
@@ -50,4 +52,6 @@ public class BrickballFormat {
         if (validMaps.isEmpty()) return Brickball.getInstance().getTemplateManager().templates.values();
         return validMaps;
     }
+
+    public String getRequiredPermission() { return requiredPermission; }
 }

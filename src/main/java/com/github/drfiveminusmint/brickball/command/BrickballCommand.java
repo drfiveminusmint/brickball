@@ -306,11 +306,17 @@ public class BrickballCommand implements TabExecutor {
             Component message = Component.text(args[1], NamedTextColor.DARK_RED)
                     .append(Component.text(" is not an available Brickball format. Available formats are: ", NamedTextColor.RED));
             for (BrickballFormat candidate : Brickball.getInstance().getFormats()) {
-                message = message.append(Component.text(candidate.getName(), NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball create " + candidate.getName())))
-                        .append(Component.text(" "));
+                if (player.hasPermission(candidate.getRequiredPermission()) || candidate.getRequiredPermission().equalsIgnoreCase(""))
+                    message = message.append(Component.text(candidate.getName(), NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball create " + candidate.getName())))
+                            .append(Component.text(" "));
             }
             player.sendMessage(message);
             return true;
+        }
+        if (!(player.hasPermission(format.getRequiredPermission()) || format.getRequiredPermission().equalsIgnoreCase(""))) {
+            player.sendMessage(Component.text("You don't have permission to create ", NamedTextColor.RED)
+                    .append(Component.text(format.getName(), NamedTextColor.AQUA))
+                    .append(Component.text(" lobbies.", NamedTextColor.RED)));
         }
         String flags = "";
         if (args.length > 2 && args[2].charAt(0) == '-')

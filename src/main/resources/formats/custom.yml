@@ -10,4 +10,6 @@ maps:
 # Override default match settings. Not all settings need to be defined here.
 overrideSettings:
   respawning: true
+# Permission required to create a lobby with this format
+requiredPermission: "brickball.create.custom"
 
