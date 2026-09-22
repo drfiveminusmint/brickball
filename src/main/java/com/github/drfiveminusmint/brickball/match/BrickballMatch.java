@@ -221,6 +221,8 @@ public class BrickballMatch implements ForwardingAudience {
                 if (arena.checkLocationInSpawn(player.getLocation(), 1-i)) {
                     matchScoreObjective.getScore(teamNames[i]).setScore(matchScoreObjective.getScore(teamNames[i]).getScore() + 1);
                     player.getInventory().remove(Material.BRICK);
+                    if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
+                        player.getInventory().setItemInOffHand(null);
                     player.setGlowing(false);
                     player.removePotionEffect(PotionEffectType.WEAKNESS);
                     playSound(Sound.sound(Key.key("block.glass.break"), Sound.Source.BLOCK, 30f, 2f));

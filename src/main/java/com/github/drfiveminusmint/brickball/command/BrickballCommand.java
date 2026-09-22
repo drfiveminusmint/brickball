@@ -207,7 +207,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(message);
             return true;
         }
-        if (!lobby.setMap(template, player)) {
+        if (!lobby.setMap(template)) {
             Component message = Component.text(args[1], NamedTextColor.DARK_RED)
                     .append(Component.text(" is not legal in this Brickball format. Legal maps for this format are: ", NamedTextColor.RED));
             for (ArenaTemplate candidate : lobby.getFormat().getValidMaps()) {

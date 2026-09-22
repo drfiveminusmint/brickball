@@ -179,8 +179,8 @@ public class Lobby implements ForwardingAudience {
         return true;
     }
 
-    public boolean setMap(ArenaTemplate template, @Nullable Player player) {
-        if (player != null && player != host)  {
+    public boolean setMap(ArenaTemplate template) {
+        if (player != null)  {
             player.sendMessage(Component.text("You are not the host!",NamedTextColor.RED));
             return false;
         }
