@@ -135,7 +135,7 @@ public class Lobby implements ForwardingAudience {
                 return false;
             }
             otherPlayer.sendMessage(requester.displayName()
-                    .append(Component.text("%s has invited you to a ", NamedTextColor.GOLD))
+                    .append(Component.text(" has invited you to a ", NamedTextColor.GOLD))
                     .append(Component.text(format.getName(), NamedTextColor.YELLOW))
                     .append(Component.text(" lobby.", NamedTextColor.GOLD))
                     .append(Component.text(" Click to join!", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball join " + requester.getName()))));
