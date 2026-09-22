@@ -180,10 +180,6 @@ public class Lobby implements ForwardingAudience {
     }
 
     public boolean setMap(ArenaTemplate template) {
-        if (player != null)  {
-            player.sendMessage(Component.text("You are not the host!",NamedTextColor.RED));
-            return false;
-        }
         if (!format.getValidMaps().contains(template))
             return false;
         nextMap = template;
