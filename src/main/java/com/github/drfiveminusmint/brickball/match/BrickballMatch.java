@@ -92,6 +92,9 @@ public class BrickballMatch implements ForwardingAudience {
         }
         state = MatchState.PREPARING;
         teams[2] = scoreboard.registerNewTeam(teamNames[2]);
+        // Make spectators invisible
+        teams[2].setCanSeeFriendlyInvisibles(false);
+        teams[2].setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
         matchScoreObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
         matchScoreObjective.setAutoUpdateDisplay(true);
         shotClockBar.setVisible(false);
