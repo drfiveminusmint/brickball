@@ -545,7 +545,7 @@ public class BrickballCommand implements TabExecutor {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (args[0].equalsIgnoreCase("join")) {
+        if (args[0].equalsIgnoreCase("join") || args[0].equalsIgnoreCase("invite")) {
             List<String> result = new ArrayList<>();
             for (Player player : Bukkit.getServer().getOnlinePlayers())
                 result.add(player.getName());
@@ -554,7 +554,8 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("create") || args[0].equalsIgnoreCase("stats")) {
             List<String> result = new ArrayList<>();
             for (BrickballFormat format : Brickball.getInstance().getFormats())
-                result.add(format.getName());
+                if (commandSender.hasPermission(format.getRequiredPermission()) || format.getRequiredPermission().equalsIgnoreCase(""))
+                    result.add(format.getName());
             return result;
         }
         if (args[0].equalsIgnoreCase("map")) {
@@ -582,7 +583,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of( "admin", "create", "join", "jointeam", "leave", "map", "pause", "ready", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
+        if (args.length == 1) return List.of( "admin", "create", "host", "cancel", "join", "jointeam", "leave", "map", "pause", "ready", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
         return null;
     }
 
