@@ -614,7 +614,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in an active Brickball match.", NamedTextColor.RED));
             return true;
         }
-        if (!match.getIsHost(player)) {
+        if (!match.getIsHost(player) && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("Only the host can pause the match.", NamedTextColor.RED));
             return true;
         }
