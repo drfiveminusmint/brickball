@@ -359,7 +359,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text(String.format("Player %s has no active Brickball lobby you can join.", args[1]), NamedTextColor.RED));
             return true;
         }
-        if(!lobby.join(player, 0)) {
+        if(!lobby.join(player, 2)) {
             player.sendMessage(Component.text(String.format("You don't have permission to join this match.", args[1]), NamedTextColor.RED));
             return true;
         }
