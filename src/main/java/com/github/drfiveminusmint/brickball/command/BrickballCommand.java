@@ -81,6 +81,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("Only a lobby host can use this command.", NamedTextColor.RED));
             return true;
         }
+        lobby.setHost(other);
         return true;
     }
     private boolean cancelCommand(Player player, String[] args) {
