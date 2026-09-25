@@ -486,6 +486,10 @@ public class BrickballCommand implements TabExecutor {
         }
         if (args[1].equalsIgnoreCase("list")) {
             if (!player.hasPermission("brickball.map.list")) return insufficientPermissions(player);
+            if (Brickball.getInstance().getTemplateManager().templates.isEmpty()) {
+                player.sendMessage(Component.text("No maps to list.", NamedTextColor.YELLOW));
+                return true;
+            }
             for (ArenaTemplate template : Brickball.getInstance().getTemplateManager().templates.values())
                 player.sendMessage(Component.text(template.getID()));
             return true;
