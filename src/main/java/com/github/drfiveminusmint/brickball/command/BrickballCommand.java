@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class BrickballCommand implements TabExecutor {
@@ -313,6 +314,11 @@ public class BrickballCommand implements TabExecutor {
                             .append(Component.text(" "));
             }
             player.sendMessage(message);
+            return true;
+        }
+        if (format.getValidMaps().isEmpty()) {
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "No valid maps to choose from.");
+            player.sendMessage(Component.text("Error: No valid maps to choose from", NamedTextColor.RED));
             return true;
         }
         if (!(player.hasPermission(format.getRequiredPermission()) || format.getRequiredPermission().equalsIgnoreCase(""))) {
