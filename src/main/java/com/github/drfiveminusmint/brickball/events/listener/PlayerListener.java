@@ -125,19 +125,16 @@ public class PlayerListener implements Listener {
     }
 
     public void respawnActionBar(Player player, int maxDelay) {
-        player.sendActionBar(Component.text("Respawning in: ", NamedTextColor.RED).append(Component.text(maxDelay, NamedTextColor.YELLOW)));
-        double count;
-        for (count = maxDelay;  count >= 0; count -= 2) {
-            double finalCount = count / 20.0;
+        for (int count = maxDelay/20;  count >= 0; count -= 1) {
+            int finalCount = count;
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     player.sendActionBar(Component.text("Respawning in: ", NamedTextColor.RED).append(Component.text(finalCount, NamedTextColor.YELLOW)));
                 }
-            }.runTaskLater(Brickball.getInstance(), (long) (maxDelay - count));
+            }.runTaskLater(Brickball.getInstance(), (maxDelay - (count * 20L)));
         }
     }
-
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(event.getPlayer());
