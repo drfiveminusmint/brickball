@@ -229,6 +229,7 @@ public class BrickballMatch implements ForwardingAudience {
                     player.setGlowing(false);
                     player.removePotionEffect(PotionEffectType.WEAKNESS);
                     playSound(Sound.sound(Key.key("block.glass.break"), Sound.Source.BLOCK, 30f, 2f));
+                    scoreTitle(player);
                     stopShotClock();
                     reportScore(player);
                     if (matchScoreObjective.getScore(teamNames[i]).getScore() < settings.getInt(MatchSettings.Setting.POINTS_TO_WIN))
@@ -237,6 +238,12 @@ public class BrickballMatch implements ForwardingAudience {
                         endMatch();
                     }
                 }
+    }
+
+    public void scoreTitle(Player scorer) {
+        Component mainTitle = Component.text(scorer.getName() + " Scored!", NamedTextColor.YELLOW);
+        Title title = Title.title(mainTitle, Component.text(""));
+        showTitle(title);
     }
 
     public void checkDeathRegions(Player player) {

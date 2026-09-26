@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class BrickballCommand implements TabExecutor {
@@ -315,6 +316,11 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(message);
             return true;
         }
+        if (format.getValidMaps().isEmpty()) {
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "No valid maps to choose from.");
+            player.sendMessage(Component.text("Error: No valid maps to choose from", NamedTextColor.RED));
+            return true;
+        }
         if (!(player.hasPermission(format.getRequiredPermission()) || format.getRequiredPermission().equalsIgnoreCase(""))) {
             player.sendMessage(Component.text("You don't have permission to create ", NamedTextColor.RED)
                     .append(Component.text(format.getName(), NamedTextColor.AQUA))
@@ -480,6 +486,10 @@ public class BrickballCommand implements TabExecutor {
         }
         if (args[1].equalsIgnoreCase("list")) {
             if (!player.hasPermission("brickball.map.list")) return insufficientPermissions(player);
+            if (Brickball.getInstance().getTemplateManager().templates.isEmpty()) {
+                player.sendMessage(Component.text("No maps to list.", NamedTextColor.YELLOW));
+                return true;
+            }
             for (ArenaTemplate template : Brickball.getInstance().getTemplateManager().templates.values())
                 player.sendMessage(Component.text(template.getID()));
             return true;
@@ -633,7 +643,7 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage(Component.text("You're not in an active Brickball match.", NamedTextColor.RED));
             return true;
         }
-        if (!match.getIsHost(player)) {
+        if (!match.getIsHost(player) && !player.hasPermission("brickball.host.override")) {
             player.sendMessage(Component.text("Only the host can unpause the match.", NamedTextColor.RED));
             return true;
         }
