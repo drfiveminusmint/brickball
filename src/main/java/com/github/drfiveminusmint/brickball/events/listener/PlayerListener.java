@@ -96,6 +96,7 @@ public class PlayerListener implements Listener {
         if (player.getRespawnLocation() == null) Brickball.getInstance().getLogger().log(Level.SEVERE, "UH OH");
         if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0)
             player.setGameMode(GameMode.SPECTATOR);
+            respawnActionBar(player, playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
         if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) {
             new BukkitRunnable() {
                 @Override
@@ -120,6 +121,20 @@ public class PlayerListener implements Listener {
                     playerMatch.startRound();
                 }
             }.runTaskLater(Brickball.getInstance(), 20);
+        }
+    }
+
+    public void respawnActionBar(Player player, int maxDelay) {
+        player.sendActionBar(Component.text("Respawning in: ", NamedTextColor.RED).append(Component.text(maxDelay, NamedTextColor.YELLOW)));
+        double count;
+        for (count = maxDelay;  count >= 0; count -= 2) {
+            double finalCount = count / 20.0;
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    player.sendActionBar(Component.text("Respawning in: ", NamedTextColor.RED).append(Component.text(finalCount, NamedTextColor.YELLOW)));
+                }
+            }.runTaskLater(Brickball.getInstance(), (long) (maxDelay - count));
         }
     }
 
