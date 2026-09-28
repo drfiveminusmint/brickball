@@ -12,4 +12,9 @@ overrideSettings:
   respawning: true
 # Permission required to create a lobby with this format
 requiredPermission: "brickball.create.custom"
+# Item to display in the GUI to represent this format
+displayItem:
+  type: brick
+  quantity: 1
+  lore: "A custom game"
 

@@ -39,7 +39,8 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start/pause/unpause)");
+            //player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start/pause/unpause)");
+            Brickball.getInstance().getMainUI().display(player);
             return true;
         }
         if (args[0].equalsIgnoreCase("join")) return joinCommand(player, args);

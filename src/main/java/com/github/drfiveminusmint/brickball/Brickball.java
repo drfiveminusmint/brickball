@@ -13,9 +13,22 @@ import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
 import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
 import com.github.drfiveminusmint.brickball.scheduling.LoadStatsTask;
 import com.github.drfiveminusmint.brickball.stats.FormatStats;
+import com.github.drfiveminusmint.brickball.ui.LobbyCreationMenu;
+import com.github.drfiveminusmint.fiveUI.FiveUI;
+import com.github.drfiveminusmint.fiveUI.container.Page;
+import com.github.drfiveminusmint.fiveUI.element.StaticButton;
+import com.github.drfiveminusmint.fiveUI.element.StaticDisplay;
+import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.ItemFactory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -34,6 +47,7 @@ public final class Brickball extends JavaPlugin {
     private HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap();
     private World matchWorld;
     private BrickballScheduler scheduler;
+    private Page mainUI;
     private boolean doBackgroundArenaGeneration = false;
 
     public static Brickball getInstance() {
@@ -123,6 +137,18 @@ public final class Brickball extends JavaPlugin {
                 scheduler.submitTask(new CreateMatchTask(template.getID(), -1));
             }
         }
+
+        // Build main UI Page
+        mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD), InventoryType.CHEST);
+        mainUI.setElement(10, new StaticDisplay(
+                new ItemStackBuilder(Material.BRICK, 1)
+                .name(Component.text("Find Match", NamedTextColor.YELLOW))
+                .itemStack()));
+        StaticButton createCustomButton = new StaticButton(new ItemStackBuilder(Material.ANVIL, 1)
+                .name(Component.text("Create Custom Match", NamedTextColor.YELLOW))
+                .itemStack());
+        createCustomButton.setOnClick(((player, clickableElement, clickType) -> new LobbyCreationMenu(player)));
+        mainUI.setElement(16, createCustomButton);
     }
 
     public World getMatchWorld() {return matchWorld;}
@@ -134,8 +160,11 @@ public final class Brickball extends JavaPlugin {
         return doBackgroundArenaGeneration;
     }
 
+    public Page getMainUI() { return mainUI; }
+
     @Override
     public void onDisable() {
+        FiveUI.getInstance().getUIManager().unregisterInterface(mainUI);
         matchManager.stopAllMatches();
         scheduler.shutdown();
     }

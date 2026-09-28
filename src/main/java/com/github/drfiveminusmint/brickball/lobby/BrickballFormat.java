@@ -3,7 +3,12 @@ package com.github.drfiveminusmint.brickball.lobby;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +22,7 @@ public class BrickballFormat {
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
     private final String requiredPermission;
+    private final ItemStack displayItem;
 
     public BrickballFormat(ConfigurationSection section) {
         this.name = section.getString("name");
@@ -37,11 +43,22 @@ public class BrickballFormat {
                 Brickball.getInstance().getLogger().log(Level.WARNING, String.format("Cannot find map '%s' for format '%s'.", s, name));
         }
         this.requiredPermission = section.getString("requiredPermission", "");
+        ConfigurationSection itemSection = section.getConfigurationSection("displayItem");
+        if (itemSection == null)
+            this.displayItem = new ItemStackBuilder(Material.BRICK, 1)
+                    .name(Component.text(name, (this.isRated ? NamedTextColor.AQUA : NamedTextColor.RED)))
+                    .itemStack();
+        else {
+            this.displayItem = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
+                    .name(Component.text(name, (this.isRated ? NamedTextColor.AQUA : NamedTextColor.RED)))
+                    .addLore(Component.text(itemSection.getString("lore", "")))
+                    .itemStack();
+        }
     }
 
     public String getName() { return name; }
 
-    public boolean getIsRated() {return isRated;}
+    public boolean getIsRated() { return isRated; }
 
     public int getMinPlayersPerTeam() { return minPlayersPerTeam; }
     public int getMaxPlayersPerTeam() { return maxPlayersPerTeam; }
@@ -54,4 +71,6 @@ public class BrickballFormat {
     }
 
     public String getRequiredPermission() { return requiredPermission; }
+
+    public ItemStack getDisplayItem() { return displayItem; }
 }
