@@ -50,7 +50,7 @@ public class BrickballFormat {
                     .itemStack();
         else {
             this.displayItem = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
-                    .name(Component.text(name, (this.isRated ? NamedTextColor.AQUA : NamedTextColor.RED)))
+                    .name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA)))
                     .addLore(Component.text(itemSection.getString("lore", "")))
                     .itemStack();
         }
