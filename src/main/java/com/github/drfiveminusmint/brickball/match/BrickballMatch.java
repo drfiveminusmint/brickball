@@ -143,6 +143,10 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void startRound() {
+        startRound(true);
+    }
+
+    public void startRound(boolean refillArrows) {
         arena.closeDoors();
         shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
         shotClockBar.setVisible(false);
@@ -173,7 +177,7 @@ public class BrickballMatch implements ForwardingAudience {
                     player.getInventory().remove(Material.COOKED_BEEF);
                     player.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, settings.getInt(MatchSettings.Setting.STEAKS)));
                 }
-                if (settings.getInt(MatchSettings.Setting.ARROWS) > 0) {
+                if (settings.getInt(MatchSettings.Setting.ARROWS) > 0 && refillArrows) {
                     player.getInventory().remove(Material.ARROW);
                     player.getInventory().addItem(new ItemStack(Material.ARROW, settings.getInt(MatchSettings.Setting.ARROWS)));
                 }
@@ -596,7 +600,7 @@ public class BrickballMatch implements ForwardingAudience {
         Location savedRespawnLocation = losingPlayer.getRespawnLocation();
         // Reset the round
         stopShotClock();
-        startRound();
+        startRound(false); //don't refill arrows on turnovers
         losingPlayer.setRespawnLocation(savedRespawnLocation, true);
         losingPlayer.teleport(savedRespawnLocation);
         // Override brick spawn
