@@ -23,8 +23,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.logging.Level;
-
 public class SettingsMenu {
     private final Lobby lobby;
     private final Page page;
