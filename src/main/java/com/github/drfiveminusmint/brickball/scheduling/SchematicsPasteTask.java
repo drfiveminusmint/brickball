@@ -1,7 +1,6 @@
 package com.github.drfiveminusmint.brickball.scheduling;
 
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
-import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
@@ -13,7 +12,6 @@ import com.sk89q.worldedit.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.datatransfer.Clipboard;
 import java.util.List;
 
 public class SchematicsPasteTask implements SyncTask {
