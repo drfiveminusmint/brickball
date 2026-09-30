@@ -5,6 +5,7 @@ import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
+import com.github.drfiveminusmint.brickball.ui.SettingsMenu;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
@@ -39,6 +40,7 @@ public class Lobby implements ForwardingAudience {
     private boolean isPrivate;
     private @Nullable BrickballMatch activeMatch;
     private ArenaTemplate nextMap;
+    private SettingsMenu settingsMenu;
 
     // Constructor
     // Automatically registers itself with the LobbyManager
@@ -70,6 +72,8 @@ public class Lobby implements ForwardingAudience {
         // set initial map
         nextMap = (ArenaTemplate) format.getValidMaps().toArray()
                 [new Random(System.currentTimeMillis()).nextInt(format.getValidMaps().size())];
+        // create settings menu
+        settingsMenu = new SettingsMenu(this);
 
     }
 
@@ -229,6 +233,7 @@ public class Lobby implements ForwardingAudience {
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().endMatch(activeMatch);
         Brickball.getInstance().getLobbyList().unregisterLobby(this);
+        settingsMenu.destroy();
         return true;
     }
 
@@ -312,5 +317,9 @@ public class Lobby implements ForwardingAudience {
         if (activeMatch == null)
             return null;
         return activeMatch.getState();
+    }
+
+    public SettingsMenu getSettingsMenu() {
+        return settingsMenu;
     }
 }

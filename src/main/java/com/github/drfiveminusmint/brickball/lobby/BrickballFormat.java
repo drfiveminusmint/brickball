@@ -6,6 +6,7 @@ import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
@@ -22,7 +23,7 @@ public class BrickballFormat {
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
     private final String requiredPermission;
-    private final ItemStack displayItem;
+    private final ItemStack inactiveDisplayItem, activeDisplayItem;
 
     public BrickballFormat(ConfigurationSection section) {
         this.name = section.getString("name");
@@ -44,16 +45,19 @@ public class BrickballFormat {
         }
         this.requiredPermission = section.getString("requiredPermission", "");
         ConfigurationSection itemSection = section.getConfigurationSection("displayItem");
-        if (itemSection == null)
-            this.displayItem = new ItemStackBuilder(Material.BRICK, 1)
-                    .name(Component.text(name, (this.isRated ? NamedTextColor.AQUA : NamedTextColor.RED)))
-                    .itemStack();
-        else {
-            this.displayItem = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
+        // Create the 'selected' and 'unselected' items for the lobby creation GUI
+        // The selected item has an enchantment glow.
+        ItemStackBuilder builder;
+        if (itemSection == null) {
+            builder = new ItemStackBuilder(Material.BRICK, 1);
+        } else {
+            builder = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
                     .name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA)))
-                    .addLore(Component.text(itemSection.getString("lore", "")))
-                    .itemStack();
+                    .addLore(Component.text(itemSection.getString("lore", "")));
         }
+        this.inactiveDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA))).itemStack();
+        this.activeDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA), TextDecoration.BOLD))
+                .setGlimmer(true).itemStack();
     }
 
     public String getName() { return name; }
@@ -72,5 +76,6 @@ public class BrickballFormat {
 
     public String getRequiredPermission() { return requiredPermission; }
 
-    public ItemStack getDisplayItem() { return displayItem; }
+    public ItemStack getUnselectedDisplayItem() { return inactiveDisplayItem; }
+    public ItemStack getSelectedDisplayItem() { return activeDisplayItem; }
 }

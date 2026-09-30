@@ -5,20 +5,18 @@ import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
+import com.github.drfiveminusmint.fiveUI.element.RadioButton;
 import com.github.drfiveminusmint.fiveUI.element.SelectorButton;
 import com.github.drfiveminusmint.fiveUI.element.StaticButton;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
-
-import java.text.Normalizer;
 
 public class LobbyCreationMenu {
     Player host;
@@ -35,9 +33,12 @@ public class LobbyCreationMenu {
         for (BrickballFormat candidate : Brickball.getInstance().getFormats()) {
             if (candidate.getRequiredPermission().equalsIgnoreCase("")
                     || host.hasPermission(candidate.getRequiredPermission())) {
-                StaticButton button = new StaticButton(candidate.getDisplayItem());
-                button.setOnClick(((player, clickableElement, clickType) -> LobbyCreationMenu.this.format = candidate));
+                RadioButton button = new RadioButton(candidate.getUnselectedDisplayItem(), candidate.getSelectedDisplayItem());
+                button.setOnClick(((player, clickableElement, clickType) -> format = candidate));
+                if (formatsFound != 0)
+                    button.link((RadioButton) mainPage.getElement(formatsFound-1));
                 mainPage.setElement(formatsFound++, button);
+
             }
         }
         // Privacy button
