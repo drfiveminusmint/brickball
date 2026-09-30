@@ -18,9 +18,7 @@ import com.github.drfiveminusmint.brickball.ui.LobbyCreationMenu;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
 import com.github.drfiveminusmint.fiveUI.element.LinkButton;
-import com.github.drfiveminusmint.fiveUI.element.RadioButton;
 import com.github.drfiveminusmint.fiveUI.element.StaticButton;
-import com.github.drfiveminusmint.fiveUI.element.StaticDisplay;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -36,6 +34,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -45,12 +44,13 @@ public final class Brickball extends JavaPlugin {
     private TemplateManager templateManager;
     private MatchManager matchManager;
     private LobbyList lobbyList;
-    private ArrayList<BrickballFormat> formats = new ArrayList<>();
-    private HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap();
-    private HashMap<BrickballFormat, Matchmaker> matchmakers = new HashMap<>();
+    private final ArrayList<BrickballFormat> formats = new ArrayList<>();
+    private final ArrayList<ArenaTemplate> backroundGenerateMaps = new ArrayList<>();
+    private final HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap<>();
+    private final HashMap<BrickballFormat, Matchmaker> matchmakers = new HashMap<>();
     private World matchWorld;
     private BrickballScheduler scheduler;
-    private Page mainUI, matchmakingUI;
+    private Page mainUI;
     private boolean doBackgroundArenaGeneration = false;
 
     public static Brickball getInstance() {
@@ -105,6 +105,7 @@ public final class Brickball extends JavaPlugin {
             else
                 getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
         }
+        int numMatchmakers = 0;
         // Load formats and stats
         for (File file : formatsFolder.listFiles()) {
             YamlConfiguration formatConfig = new YamlConfiguration();
@@ -119,8 +120,13 @@ public final class Brickball extends JavaPlugin {
                 if (!statsFile.exists()) statsFile.createNewFile();
                 scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats));
                 // create matchmakers if necessary
-                if (format.getDoMatchmaking())
-                    matchmakers.put(format, new Matchmaker(format));
+                if (format.getDoMatchmaking()) {
+                    Matchmaker matchmaker = new Matchmaker(format);
+                    // stagger our matchmakers running
+                    matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
+                    matchmakers.put(format, matchmaker);
+                }
+
                 getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
@@ -136,17 +142,20 @@ public final class Brickball extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new MatchEndListener(), this);
 
-        doBackgroundArenaGeneration = getConfig().getBoolean("preloadArenas", false);
+        for (Object o : getConfig().getList("backgroundGenerateMaps", new ArrayList<>())) {
+            if (o instanceof String s && templateManager.findTemplate(s) != null)
+                backroundGenerateMaps.add(templateManager.findTemplate(s));
+        }
+        doBackgroundArenaGeneration = !backroundGenerateMaps.isEmpty();
         if (doBackgroundArenaGeneration) {
-            int i = 0;
-            for (ArenaTemplate template : templateManager.templates.values()) {
+            for (ArenaTemplate template : backroundGenerateMaps) {
                 scheduler.submitTask(new CreateMatchTask(template.getID(), -1));
             }
         }
 
         // Create UI Pages
         mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
-        matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED , TextDecoration.BOLD), InventoryType.CHEST);
+        Page matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
 
         // Build main UI page
         mainUI.setElement(10, new LinkButton(

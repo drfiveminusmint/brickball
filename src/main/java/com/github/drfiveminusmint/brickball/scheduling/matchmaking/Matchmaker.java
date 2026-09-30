@@ -12,8 +12,8 @@ import java.util.HashSet;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class Matchmaker extends BukkitRunnable {
-    private static final double CONST_A = 1.0, CONST_B = 1.0;
-    private static final int CONST_C = 100, CONST_D = 100;
+    private static final double HEURISTIC_TIME_COEFFICIENT = 5.0, HEURISTIC_TIME_POWER = 0.25;
+    private static final int HEURISTIC_MAX_TIME_BONUS = 100, HEURISTIC_UNFILLED_BONUS = 100;
     private static final int MINIMUM_SCORE = 300;
 
     private final PriorityBlockingQueue<QueueingPlayer> queue = new PriorityBlockingQueue<>();
@@ -25,6 +25,9 @@ public class Matchmaker extends BukkitRunnable {
 
     @Override
     public void run() {
+        // don't bother if there aren't enough players to create a match
+        if (queue.size() < format.getMinPlayersPerTeam() * 2)
+            return;
         // Prioritize finding a match for the player who's been queueing the longest
         // If absolutely no matches can be found for them, proceed to the next player in the queue.
         HashSet<QueueingPlayer> removed = new HashSet<>(queue.size()/2 + 1);
@@ -32,6 +35,7 @@ public class Matchmaker extends BukkitRunnable {
             HashSet<MatchCandidate> candidates = new HashSet<>();
             MatchCandidate firstCandidate = new MatchCandidate();
             QueueingPlayer firstPlayer = queue.poll();
+            // store the players we've set aside
             removed.add(firstPlayer);
             firstCandidate.addPlayer(firstPlayer);
             // add the base of our tree
@@ -57,7 +61,7 @@ public class Matchmaker extends BukkitRunnable {
             PreliminaryTeams teams = null;
             int teamsScore = MINIMUM_SCORE;
             for (MatchCandidate candidate : candidates) {
-                if (candidate.getPlayers().size() > 2 * format.getMinPlayersPerTeam()) {
+                if (candidate.getPlayers().size() >= 2 * format.getMinPlayersPerTeam()) {
                     PreliminaryTeams replacement = new PreliminaryTeams(candidate, format);
                     int score = scoreTeams(replacement);
                     if (score > teamsScore) {
@@ -108,7 +112,7 @@ public class Matchmaker extends BukkitRunnable {
             // return processed players to the queue and start again
             queue.addAll(processed);
         }
-        // We've failed to find any matches, add all players to the queue and try again next tick.
+        // We've failed to find any matches, add all players to the queue and try again next cycle.
         queue.addAll(removed);
     }
 
@@ -142,8 +146,8 @@ public class Matchmaker extends BukkitRunnable {
         long time = System.currentTimeMillis();
         int ratingDifferencePenalty = Math.min( Math.min(candidate.getHighRating() - player.getRating(), 0),
                                                 Math.min(player.getRating() - candidate.getLowRating(), 0));
-        int queueTimeBonus = Math.max((int) (CONST_A * Math.pow(player.getJoinTime() - time, CONST_B)), CONST_C);
-        int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? CONST_D : 0;
+        int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(player.getJoinTime() - time, HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
+        int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
         return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
     }
 
