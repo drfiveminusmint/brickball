@@ -12,10 +12,13 @@ import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
 import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
 import com.github.drfiveminusmint.brickball.scheduling.LoadStatsTask;
+import com.github.drfiveminusmint.brickball.scheduling.matchmaking.Matchmaker;
 import com.github.drfiveminusmint.brickball.stats.FormatStats;
 import com.github.drfiveminusmint.brickball.ui.LobbyCreationMenu;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
+import com.github.drfiveminusmint.fiveUI.element.LinkButton;
+import com.github.drfiveminusmint.fiveUI.element.RadioButton;
 import com.github.drfiveminusmint.fiveUI.element.StaticButton;
 import com.github.drfiveminusmint.fiveUI.element.StaticDisplay;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
@@ -26,6 +29,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,9 +47,10 @@ public final class Brickball extends JavaPlugin {
     private LobbyList lobbyList;
     private ArrayList<BrickballFormat> formats = new ArrayList<>();
     private HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap();
+    private HashMap<BrickballFormat, Matchmaker> matchmakers = new HashMap<>();
     private World matchWorld;
     private BrickballScheduler scheduler;
-    private Page mainUI;
+    private Page mainUI, matchmakingUI;
     private boolean doBackgroundArenaGeneration = false;
 
     public static Brickball getInstance() {
@@ -113,6 +118,9 @@ public final class Brickball extends JavaPlugin {
                 File statsFile = new File(statsFolder, format.getName() + ".csv");
                 if (!statsFile.exists()) statsFile.createNewFile();
                 scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats));
+                // create matchmakers if necessary
+                if (format.getDoMatchmaking())
+                    matchmakers.put(format, new Matchmaker(format));
                 getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
@@ -136,23 +144,56 @@ public final class Brickball extends JavaPlugin {
             }
         }
 
-        // Build main UI Page
-        mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED).decorate(TextDecoration.BOLD), InventoryType.CHEST);
-        mainUI.setElement(10, new StaticDisplay(
+        // Create UI Pages
+        mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
+        matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED , TextDecoration.BOLD), InventoryType.CHEST);
+
+        // Build main UI page
+        mainUI.setElement(10, new LinkButton(
                 new ItemStackBuilder(Material.BRICK, 1)
                 .name(Component.text("Find Match", NamedTextColor.YELLOW))
-                .itemStack()));
+                .itemStack(),
+                matchmakingUI));
         StaticButton createCustomButton = new StaticButton(new ItemStackBuilder(Material.ANVIL, 1)
                 .name(Component.text("Create Custom Match", NamedTextColor.YELLOW))
                 .itemStack());
         createCustomButton.setOnClick(((player, clickableElement, clickType) -> new LobbyCreationMenu(player)));
         mainUI.setElement(16, createCustomButton);
+
+        // Build matchmaking UI page
+        int i = 0;
+        for (BrickballFormat format : matchmakers.keySet()) {
+            StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
+            button.setOnClick(((player, clickableElement, clickType) -> startPlayerQueue(player, format)));
+            matchmakingUI.setElement(i++, button);
+        }
+        matchmakingUI.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1)));
+
+
     }
 
     public World getMatchWorld() {return matchWorld;}
     public void setMatchWorld(World world) {matchWorld = world;}
     public ArrayList<BrickballFormat> getFormats() { return formats; }
     public FormatStats getFormatStats(BrickballFormat format) {return perFormatStats.get(format);}
+
+    public boolean startPlayerQueue(Player player, BrickballFormat format) {
+        // check to see if the player can join the queue
+        for (Matchmaker matchmaker : matchmakers.values())
+            if (matchmaker.hasPlayer(player))
+                return false;
+        // add the player to the queue
+        matchmakers.get(format).addPlayer(player);
+        player.sendMessage(Component.text("Joined the queue for ", NamedTextColor.AQUA).append(Component.text(format.getName(), NamedTextColor.YELLOW)));
+        return true;
+    }
+
+    public boolean endPlayerQueue(Player player) {
+        boolean result = false;
+        for (Matchmaker matchmaker : matchmakers.values())
+            result |= matchmaker.removePlayer(player);
+        return result;
+    }
 
     public boolean isBackgroundGenerationEnabled() {
         return doBackgroundArenaGeneration;

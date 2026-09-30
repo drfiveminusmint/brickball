@@ -37,5 +37,5 @@ dependencies {
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.10")
     compileOnly("com.sk89q.worldedit:worldedit-core:7.3.3")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.3")
-    compileOnly("com.github.drfiveminusmint:fiveui:alpha-1.0.2")
+    compileOnly("com.github.drfiveminusmint:fiveui:alpha-1.0.3")
 }

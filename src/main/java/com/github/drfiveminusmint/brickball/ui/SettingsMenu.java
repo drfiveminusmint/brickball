@@ -1,14 +1,13 @@
 package com.github.drfiveminusmint.brickball.ui;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
 import com.github.drfiveminusmint.fiveUI.container.TextInput;
-import com.github.drfiveminusmint.fiveUI.element.DynamicButton;
-import com.github.drfiveminusmint.fiveUI.element.SelectorButton;
-import com.github.drfiveminusmint.fiveUI.element.StaticDisplay;
+import com.github.drfiveminusmint.fiveUI.element.*;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -25,31 +24,65 @@ import org.bukkit.inventory.ItemStack;
 
 public class SettingsMenu {
     private final Lobby lobby;
-    private final Page page;
+    private final Page mainPage, mapSelectionPage;
     public SettingsMenu(Lobby linkedLobby) {
         lobby = linkedLobby;
         // Create GUI
-        page = new Page(Component.text("Match Settings", NamedTextColor.DARK_GRAY, TextDecoration.BOLD), InventoryType.CHEST);
+        mainPage = new Page(Component.text("Match Settings", NamedTextColor.DARK_GRAY, TextDecoration.BOLD), InventoryType.CHEST);
         // Create toggle buttons for the boolean match settings
-        page.setElement(0, createToggleButton(MatchSettings.Setting.BRICK_FUMBLING, "Brick Fumbling", Material.NETHER_BRICK, Material.BRICK));
-        page.setElement(1, createToggleButton(MatchSettings.Setting.DEATH_TURNOVERS, "Death Turnovers", Material.CHEST, Material.ENDER_CHEST));
-        page.setElement(2, createToggleButton(MatchSettings.Setting.NATURAL_REGENERATION, "Natural Regeneration", Material.GOLDEN_APPLE, Material.GLASS_BOTTLE));
-        page.setElement(3, createToggleButton(MatchSettings.Setting.RESPAWNING, "Respawning", Material.TOTEM_OF_UNDYING, Material.SKELETON_SKULL));
+        mainPage.setElement(0, createToggleButton(MatchSettings.Setting.BRICK_FUMBLING, "Brick Fumbling", Material.NETHER_BRICK, Material.BRICK));
+        mainPage.setElement(1, createToggleButton(MatchSettings.Setting.DEATH_TURNOVERS, "Death Turnovers", Material.CHEST, Material.ENDER_CHEST));
+        mainPage.setElement(2, createToggleButton(MatchSettings.Setting.NATURAL_REGENERATION, "Natural Regeneration", Material.GOLDEN_APPLE, Material.GLASS_BOTTLE));
+        mainPage.setElement(3, createToggleButton(MatchSettings.Setting.RESPAWNING, "Respawning", Material.TOTEM_OF_UNDYING, Material.SKELETON_SKULL));
         // Create number prompt buttons for the integer match settings
-        page.setElement(18, createNumberPromptButton(MatchSettings.Setting.ARROWS, page, "Arrows", Material.ARROW, 1));
-        page.setElement(19, createNumberPromptButton(MatchSettings.Setting.STEAKS, page, "Steaks", Material.COOKED_BEEF, 1));
-        page.setElement(20, createNumberPromptButton(MatchSettings.Setting.RESPAWN_DELAY, page, "Respawn Delay (Seconds)", Material.RED_BED, 20));
-        page.setElement(21, createNumberPromptButton(MatchSettings.Setting.SHOT_CLOCK, page, "Shot Clock (Seconds)", Material.TNT, 20));
-        page.setElement(22, createNumberPromptButton(MatchSettings.Setting.TIMER, page, "Match Time (Minutes)", Material.CLOCK, 60));
-        page.setElement(23, createNumberPromptButton(MatchSettings.Setting.POINTS_TO_WIN, page, "Points to win", Material.GREEN_STAINED_GLASS, 1));
+        mainPage.setElement(18, createNumberPromptButton(MatchSettings.Setting.ARROWS, mainPage, "Arrows", Material.ARROW, 1));
+        mainPage.setElement(19, createNumberPromptButton(MatchSettings.Setting.STEAKS, mainPage, "Steaks", Material.COOKED_BEEF, 1));
+        mainPage.setElement(20, createNumberPromptButton(MatchSettings.Setting.RESPAWN_DELAY, mainPage, "Respawn Delay (Seconds)", Material.SPAWNER, 20));
+        mainPage.setElement(21, createNumberPromptButton(MatchSettings.Setting.SHOT_CLOCK, mainPage, "Shot Clock (Seconds)", Material.TNT, 1));
+        mainPage.setElement(22, createNumberPromptButton(MatchSettings.Setting.TIMER, mainPage, "Match Time (Minutes)", Material.CLOCK, 60));
+        mainPage.setElement(23, createNumberPromptButton(MatchSettings.Setting.POINTS_TO_WIN, mainPage, "Points to win", Material.GREEN_STAINED_GLASS, 1));
+
+        // Create map selection page
+        mapSelectionPage = new Page(Component.text("Select Map", NamedTextColor.DARK_GRAY, TextDecoration.BOLD), InventoryType.CHEST);
+        int mapsFound = 0;
+        for (ArenaTemplate map : lobby.getFormat().getValidMaps()) {
+            // possible TODO: map-specific button icons?
+            RadioButton button = new RadioButton(
+                    new ItemStackBuilder(Material.NETHER_BRICK, 1)
+                            .name(Component.text(map.getID(), NamedTextColor.GRAY))
+                            .itemStack(),
+                    new ItemStackBuilder(Material.BRICK, 1)
+                            .name(Component.text(map.getID(), NamedTextColor.YELLOW, TextDecoration.BOLD))
+                            .itemStack()
+            );
+            // Link all maps after the first with the first button
+            if (mapsFound != 0)
+                button.link((RadioButton) mapSelectionPage.getElement(0));
+            // Initialize the button corresponding to the current map as clicked
+            if (map.equals(lobby.getNextMap()))
+                button.setClicked();
+            // When this button is clicked, set the next map to the corresponding ArenaTemplate
+            button.setOnClick(((player, clickableElement, clickType) -> lobby.setMap(map)));
+            mapSelectionPage.setElement(mapsFound++, button);
+        }
+        // return to main page on closing
+        mapSelectionPage.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> mainPage.display(player), 1)));
+
+        // Link main page to map selection page
+        mainPage.setElement(8, new LinkButton(
+                new ItemStackBuilder(Material.GRASS_BLOCK, 1)
+                        .name(Component.text("Select next map...", NamedTextColor.AQUA, TextDecoration.ITALIC))
+                        .itemStack(),
+                mapSelectionPage
+        ));
     }
 
     public void destroy() {
-        FiveUI.getInstance().getUIManager().unregisterInterface(page);
+        FiveUI.getInstance().getUIManager().unregisterInterface(mainPage);
     }
 
     public void open(Player player) {
-        page.display(player);
+        mainPage.display(player);
     }
 
     private SelectorButton createToggleButton(NamespacedKey key, String humanName, Material trueMaterial, Material falseMaterial) {
@@ -63,10 +96,8 @@ public class SettingsMenu {
                         .addLore(Component.text("Enabled"))
                         .itemStack()
         });
-        // TODO REMOVE THIS
-        result.setOnEntry(((player, o) -> {}));
         if ((Boolean) lobby.getMatchSetting(key))
-            result.onClick(null, ClickType.LEFT); // horrible hack, TODO fix this when the API is updated
+            result.setState(1);
         result.setOnEntry(((player, o) -> lobby.setMatchSetting(key, (Integer) o == 1)));
         return result;
     }

@@ -316,6 +316,7 @@ public class Lobby implements ForwardingAudience {
     public void setHost(@Nullable Player newHost) { host = newHost;}
     public Player getHost() { return host;}
     public BrickballFormat getFormat() { return format; }
+    public ArenaTemplate getNextMap() { return nextMap; }
 
     public @Nullable MatchState getCurrentMatchState() {
         if (activeMatch == null)
