@@ -60,6 +60,8 @@ public class LobbyCreationMenu {
                 .name(Component.text("Create Match!", NamedTextColor.GREEN, TextDecoration.BOLD))
                 .itemStack());
         createButton.setOnClick(((player, clickableElement, clickType) -> {
+            if (format == null)
+                return;
             build();
             host.closeInventory();
         }));
