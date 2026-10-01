@@ -5,6 +5,8 @@ minPlayersPerTeam: 0
 maxPlayersPerTeam: 99
 # Whether the format is rated
 isRated: false
+# Whether this format supports matchmaking
+doMatchmaking: false
 # Permitted maps, leave empty to allow all maps
 maps:
 # Override default match settings. Not all settings need to be defined here.
