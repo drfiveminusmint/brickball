@@ -208,6 +208,10 @@ public final class Brickball extends JavaPlugin {
         return doBackgroundArenaGeneration;
     }
 
+    public ArrayList<ArenaTemplate> getBackroundGenerateMaps() {
+        return backroundGenerateMaps;
+    }
+
     public Page getMainUI() { return mainUI; }
 
     @Override

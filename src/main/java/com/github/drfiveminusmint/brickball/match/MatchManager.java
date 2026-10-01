@@ -75,7 +75,7 @@ public class MatchManager {
         }
         // restock preloaded arenas unless this was an automated start
         if (priority >= 0 && Brickball.getInstance().isBackgroundGenerationEnabled())
-            Brickball.getInstance().getScheduler().submitTask(new ArenaRestockingTask(matches, Brickball.getInstance().getTemplateManager().templates.keySet()));
+            Brickball.getInstance().getScheduler().submitTask(new ArenaRestockingTask(matches, Brickball.getInstance().getBackroundGenerateMaps()));
         return newMatch;
     }
 
