@@ -87,6 +87,9 @@ public class Lobby implements ForwardingAudience {
     // Returns false if the player cannot join this lobby
     public boolean join (Player player, int startingTeamID) {
         if (isPrivate && !invited.contains(player)) return false;
+        // Remove them from all queues
+        if (Brickball.getInstance().endPlayerQueue(player))
+            player.sendMessage("You have left the queue.");
         // kick them to the spectators if their preferred team is full
         if (lobbyTeams[startingTeamID].getSize() >= format.getMaxPlayersPerTeam() && startingTeamID != lobbyTeams.length-1) {
             startingTeamID = lobbyTeams.length-1;

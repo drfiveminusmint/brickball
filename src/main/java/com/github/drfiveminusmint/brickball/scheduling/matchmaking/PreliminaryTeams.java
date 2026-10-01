@@ -15,6 +15,7 @@ public class PreliminaryTeams {
         HashSet<QueueingPlayer> playerSet = (HashSet<QueueingPlayer>) candidate.getPlayers().clone();
         while (!playerSet.isEmpty()) {
             QueueingPlayer strongest = strongest(playerSet);
+            playerSet.remove(strongest);
             if (team2.size() < (candidate.getPlayers().size()+1)/2) {
                 if (team1Rating <= team2Rating) {
                     team1.add(strongest);

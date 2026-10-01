@@ -375,7 +375,11 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("You have left the lobby.");
             return true;
         }
-        player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+        if (Brickball.getInstance().endPlayerQueue(player)) {
+            player.sendMessage("You have left the queue.");
+            return true;
+        }
+        player.sendMessage(Component.text("You're not in a Brickball lobby or queue.", NamedTextColor.RED));
         return true;
     }
 

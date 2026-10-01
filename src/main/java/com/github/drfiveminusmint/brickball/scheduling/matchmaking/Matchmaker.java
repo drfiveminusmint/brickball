@@ -28,7 +28,7 @@ public class Matchmaker extends BukkitRunnable {
     @Override
     public void run() {
         // don't bother if there aren't enough players to create a match
-        if (queue.size() < format.getMinPlayersPerTeam() * 2)
+        if (queue.size() < format.getMinPlayersPerTeam() * 2 || queue.isEmpty())
             return;
         Brickball.getInstance().getLogger().log(Level.INFO, "Attempting to matchmake for format " + format.getName());
         // Prioritize finding a match for the player who's been queueing the longest
@@ -139,7 +139,7 @@ public class Matchmaker extends BukkitRunnable {
     public boolean removePlayer (Player player) {
         for (QueueingPlayer other : queue) {
             if (other.getPlayer() == player) {
-                return queue.remove(player);
+                return queue.remove(other);
             }
         }
         return false;

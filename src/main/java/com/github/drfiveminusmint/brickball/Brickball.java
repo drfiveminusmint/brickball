@@ -21,6 +21,7 @@ import com.github.drfiveminusmint.fiveUI.element.LinkButton;
 import com.github.drfiveminusmint.fiveUI.element.StaticButton;
 import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -191,9 +192,14 @@ public final class Brickball extends JavaPlugin {
         for (Matchmaker matchmaker : matchmakers.values())
             if (matchmaker.hasPlayer(player))
                 return false;
+        if (lobbyList.getLobbyByPlayer(player) != null)
+            return false;
         // add the player to the queue
         matchmakers.get(format).addPlayer(player);
-        player.sendMessage(Component.text("Joined the queue for ", NamedTextColor.AQUA).append(Component.text(format.getName(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.text("Joined the queue for ", NamedTextColor.GOLD)
+                .append(Component.text(format.getName(), NamedTextColor.YELLOW)));
+        player.sendMessage(Component.text("To leave the queue use ", NamedTextColor.GOLD)
+                .append( Component.text("/brickball leave", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/bb leave"))));
         return true;
     }
 
@@ -219,5 +225,7 @@ public final class Brickball extends JavaPlugin {
         FiveUI.getInstance().getUIManager().unregisterInterface(mainUI);
         matchManager.stopAllMatches();
         scheduler.shutdown();
+        for (Matchmaker matchmaker : matchmakers.values())
+            matchmaker.cancel();
     }
 }
