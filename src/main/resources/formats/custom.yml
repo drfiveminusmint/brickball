@@ -5,6 +5,8 @@ minPlayersPerTeam: 0
 maxPlayersPerTeam: 99
 # Whether the format is rated
 isRated: false
+# Whether this format supports matchmaking
+doMatchmaking: false
 # Permitted maps, leave empty to allow all maps
 maps:
 # Override default match settings. Not all settings need to be defined here.
@@ -12,4 +14,9 @@ overrideSettings:
   respawning: true
 # Permission required to create a lobby with this format
 requiredPermission: "brickball.create.custom"
+# Item to display in the GUI to represent this format
+displayItem:
+  type: brick
+  quantity: 1
+  lore: "A custom game"
 

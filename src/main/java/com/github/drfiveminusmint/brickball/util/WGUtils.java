@@ -1,7 +1,5 @@
 package com.github.drfiveminusmint.brickball.util;
 
-import com.github.drfiveminusmint.brickball.Brickball;
-import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -15,13 +13,10 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedPolygonalRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import com.sk89q.worldguard.protection.regions.RegionType;
-import org.checkerframework.checker.units.qual.C;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class WGUtils {
     public static final Set<BaseBlock> GLASS_ALL = Set.of(BlockTypes.BLACK_STAINED_GLASS.getDefaultState().toBaseBlock(),BlockTypes.WHITE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.RED_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.YELLOW_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GREEN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.ORANGE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PURPLE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.CYAN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.MAGENTA_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIME_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PINK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BROWN_STAINED_GLASS.getDefaultState().toBaseBlock());

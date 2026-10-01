@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.drfiveminusmint'
-version = 'Alpha-2.1'
+version = 'Alpha-3.0'
 description = "brick ball"
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -23,6 +23,13 @@ repositories {
     maven {
         url = uri("https://maven.enginehub.org/repo/")
     }
+    maven {
+        url = uri("https://maven.pkg.github.com/drfiveminusmint/fiveui")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 dependencies {
@@ -30,4 +37,5 @@ dependencies {
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.10")
     compileOnly("com.sk89q.worldedit:worldedit-core:7.3.3")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.3")
+    compileOnly("com.github.drfiveminusmint:fiveui:alpha-1.0.3")
 }

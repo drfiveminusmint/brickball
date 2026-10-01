@@ -1,12 +1,13 @@
 package com.github.drfiveminusmint.brickball.scheduling;
 
 import com.github.drfiveminusmint.brickball.Brickball;
+import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.github.drfiveminusmint.brickball.util.Counter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ArenaRestockingTask implements PriorityTask {
@@ -15,12 +16,12 @@ public class ArenaRestockingTask implements PriorityTask {
     private BrickballMatch[] matchList;
     private ConcurrentHashMap<String, Counter> templateCounts = new ConcurrentHashMap<>();
 
-    public ArenaRestockingTask(BrickballMatch[] matches, Set<String> templateIDSet)
+    public ArenaRestockingTask(BrickballMatch[] matches, ArrayList<ArenaTemplate> templateIDSet)
     {
         matchList = matches;
         // Initialize counter
-        for (String template : templateIDSet)
-            templateCounts.put(template, new Counter());
+        for (ArenaTemplate template : templateIDSet)
+            templateCounts.put(template.getID(), new Counter());
     }
 
     @Override

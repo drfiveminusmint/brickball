@@ -5,6 +5,7 @@ import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
+import com.github.drfiveminusmint.brickball.ui.SettingsMenu;
 import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
@@ -14,7 +15,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,6 +44,7 @@ public class Lobby implements ForwardingAudience {
     private boolean isPrivate;
     private @Nullable BrickballMatch activeMatch;
     private ArenaTemplate nextMap;
+    private SettingsMenu settingsMenu;
 
     // Constructor
     // Automatically registers itself with the LobbyManager
@@ -70,6 +76,8 @@ public class Lobby implements ForwardingAudience {
         // set initial map
         nextMap = (ArenaTemplate) format.getValidMaps().toArray()
                 [new Random(System.currentTimeMillis()).nextInt(format.getValidMaps().size())];
+        // create settings menu
+        settingsMenu = new SettingsMenu(this);
 
     }
 
@@ -79,6 +87,9 @@ public class Lobby implements ForwardingAudience {
     // Returns false if the player cannot join this lobby
     public boolean join (Player player, int startingTeamID) {
         if (isPrivate && !invited.contains(player)) return false;
+        // Remove them from all queues
+        if (Brickball.getInstance().endPlayerQueue(player))
+            player.sendMessage("You have left the queue.");
         // kick them to the spectators if their preferred team is full
         if (lobbyTeams[startingTeamID].getSize() >= format.getMaxPlayersPerTeam() && startingTeamID != lobbyTeams.length-1) {
             startingTeamID = lobbyTeams.length-1;
@@ -229,6 +240,7 @@ public class Lobby implements ForwardingAudience {
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().endMatch(activeMatch);
         Brickball.getInstance().getLobbyList().unregisterLobby(this);
+        settingsMenu.destroy();
         return true;
     }
 
@@ -307,10 +319,15 @@ public class Lobby implements ForwardingAudience {
     public void setHost(@Nullable Player newHost) { host = newHost;}
     public Player getHost() { return host;}
     public BrickballFormat getFormat() { return format; }
+    public ArenaTemplate getNextMap() { return nextMap; }
 
     public @Nullable MatchState getCurrentMatchState() {
         if (activeMatch == null)
             return null;
         return activeMatch.getState();
+    }
+
+    public SettingsMenu getSettingsMenu() {
+        return settingsMenu;
     }
 }

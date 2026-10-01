@@ -3,7 +3,13 @@ package com.github.drfiveminusmint.brickball.lobby;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import com.github.drfiveminusmint.fiveUI.util.ItemStackBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,11 +18,12 @@ import java.util.logging.Level;
 
 public class BrickballFormat {
     private final String name;
-    private final boolean isRated;
+    private final boolean isRated, doMatchmaking;
     private final int minPlayersPerTeam, maxPlayersPerTeam;
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
     private final String requiredPermission;
+    private final ItemStack inactiveDisplayItem, activeDisplayItem;
 
     public BrickballFormat(ConfigurationSection section) {
         this.name = section.getString("name");
@@ -25,6 +32,7 @@ public class BrickballFormat {
         this.minPlayersPerTeam = section.getInt("minPlayersPerTeam", 0);
         this.maxPlayersPerTeam = section.getInt("maxPlayersPerTeam", 99);
         this.isRated = section.getBoolean("isRated", false);
+        this.doMatchmaking = section.getBoolean("doMatchmaking", false);
         // if there is no such section, this will return a clone of the default settings
         this.settings = new MatchSettings(section.getConfigurationSection("overrideSettings"));
         // an empty map list indicates all maps are allowed
@@ -37,11 +45,27 @@ public class BrickballFormat {
                 Brickball.getInstance().getLogger().log(Level.WARNING, String.format("Cannot find map '%s' for format '%s'.", s, name));
         }
         this.requiredPermission = section.getString("requiredPermission", "");
+        ConfigurationSection itemSection = section.getConfigurationSection("displayItem");
+        // Create the 'selected' and 'unselected' items for the lobby creation GUI
+        // The selected item has an enchantment glow.
+        ItemStackBuilder builder;
+        if (itemSection == null) {
+            builder = new ItemStackBuilder(Material.BRICK, 1);
+        } else {
+            builder = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
+                    .name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA)))
+                    .addLore(Component.text(itemSection.getString("lore", "")));
+        }
+        this.inactiveDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA))).itemStack();
+        this.activeDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA), TextDecoration.BOLD))
+                .setGlimmer(true).itemStack();
     }
 
     public String getName() { return name; }
 
-    public boolean getIsRated() {return isRated;}
+    public boolean getIsRated() { return isRated; }
+
+    public boolean getDoMatchmaking() { return doMatchmaking; }
 
     public int getMinPlayersPerTeam() { return minPlayersPerTeam; }
     public int getMaxPlayersPerTeam() { return maxPlayersPerTeam; }
@@ -54,4 +78,7 @@ public class BrickballFormat {
     }
 
     public String getRequiredPermission() { return requiredPermission; }
+
+    public ItemStack getUnselectedDisplayItem() { return inactiveDisplayItem; }
+    public ItemStack getSelectedDisplayItem() { return activeDisplayItem; }
 }

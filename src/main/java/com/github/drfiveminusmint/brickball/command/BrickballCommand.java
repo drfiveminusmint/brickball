@@ -40,7 +40,8 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start/pause/unpause)");
+            //player.sendMessage("Usage: /brickball (join/jointeam/create/leave/map/start/pause/unpause)");
+            Brickball.getInstance().getMainUI().display(player);
             return true;
         }
         if (args[0].equalsIgnoreCase("join")) return joinCommand(player, args);
@@ -50,7 +51,7 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("map")) return mapCommand(player, args);
         if (args[0].equalsIgnoreCase("start")) return startCommand(player);
         if (args[0].equalsIgnoreCase("teamColor")) return teamColorCommand(player, args);
-        if (args[0].equalsIgnoreCase("setting")) return settingCommand(player, args);
+        if (args[0].equalsIgnoreCase("settings")) return settingCommand(player, args);
         if (args[0].equalsIgnoreCase("setmap")) return setMapCommand(player, args);
         if (args[0].equalsIgnoreCase("setworld")) return setWorldCommand(player, args);
         if (args[0].equalsIgnoreCase("admin")) return adminCommand(player, args);
@@ -380,7 +381,11 @@ public class BrickballCommand implements TabExecutor {
             player.sendMessage("You have left the lobby.");
             return true;
         }
-        player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+        if (Brickball.getInstance().endPlayerQueue(player)) {
+            player.sendMessage("You have left the queue.");
+            return true;
+        }
+        player.sendMessage(Component.text("You're not in a Brickball lobby or queue.", NamedTextColor.RED));
         return true;
     }
 
@@ -414,10 +419,6 @@ public class BrickballCommand implements TabExecutor {
     // Alters match settings in the player's current lobby.
     // These changes propagate downwards to the active match if one is present.
     public boolean settingCommand(Player player, String[] args) {
-        if (args.length < 2) {
-            player.sendMessage("Usage: /brickball setting (setting) <value>");
-            return true;
-        }
         Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
         if (lobby == null) {
             player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
@@ -429,6 +430,10 @@ public class BrickballCommand implements TabExecutor {
         }
         if (lobby.getFormat().getIsRated() && !player.hasPermission("brickball.settings.override")) {
             player.sendMessage(Component.text("You can't change match settings in a rated match.", NamedTextColor.RED));
+            return true;
+        }
+        if (args.length < 2) {
+            lobby.getSettingsMenu().open(player);
             return true;
         }
         NamespacedKey key = MatchSettings.Setting.getKey(args[1]);
@@ -594,7 +599,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of( "admin", "create", "host", "cancel", "join", "jointeam", "leave", "map", "pause", "ready", "setting", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
+        if (args.length == 1) return List.of( "admin", "create", "host", "cancel", "join", "jointeam", "leave", "map", "pause", "ready", "settings", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
         return null;
     }
 
