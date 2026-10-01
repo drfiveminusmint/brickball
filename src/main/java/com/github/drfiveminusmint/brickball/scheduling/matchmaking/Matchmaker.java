@@ -8,8 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.logging.Level;
 
 public class Matchmaker extends BukkitRunnable {
     private static final double HEURISTIC_TIME_COEFFICIENT = 5.0, HEURISTIC_TIME_POWER = 0.25;
@@ -28,6 +30,7 @@ public class Matchmaker extends BukkitRunnable {
         // don't bother if there aren't enough players to create a match
         if (queue.size() < format.getMinPlayersPerTeam() * 2)
             return;
+        Brickball.getInstance().getLogger().log(Level.INFO, "Attempting to matchmake for format " + format.getName());
         // Prioritize finding a match for the player who's been queueing the longest
         // If absolutely no matches can be found for them, proceed to the next player in the queue.
         HashSet<QueueingPlayer> removed = new HashSet<>(queue.size()/2 + 1);
@@ -61,10 +64,14 @@ public class Matchmaker extends BukkitRunnable {
             PreliminaryTeams teams = null;
             int teamsScore = MINIMUM_SCORE;
             for (MatchCandidate candidate : candidates) {
+                Brickball.getInstance().getLogger().log(Level.INFO, "Match candidate found! " + players2String(candidate.getPlayers()));
                 if (candidate.getPlayers().size() >= 2 * format.getMinPlayersPerTeam()) {
                     PreliminaryTeams replacement = new PreliminaryTeams(candidate, format);
                     int score = scoreTeams(replacement);
+                    Brickball.getInstance().getLogger().log(Level.INFO, "Built teams: " + players2String(replacement.getTeam1())+ players2String(replacement.getTeam2()));
+                    Brickball.getInstance().getLogger().log(Level.INFO, "Teams scored " + score);
                     if (score > teamsScore) {
+                        Brickball.getInstance().getLogger().log(Level.INFO, "New high score!");
                         teamsScore = score;
                         teams = replacement;
                     }
@@ -170,5 +177,15 @@ public class Matchmaker extends BukkitRunnable {
         if (teams.getTeam1().size() != teams.getTeam2().size())
             finalScore -= 100; // Penalty for different sized teams
         return finalScore;
+    }
+
+    private String players2String(Collection<QueueingPlayer> players) {
+        StringBuilder builder = new StringBuilder("[");
+        for (QueueingPlayer player : players) {
+            builder.append(player.getPlayer().getName());
+            builder.append(" ");
+        }
+        builder.append("]");
+        return builder.toString();
     }
 }
