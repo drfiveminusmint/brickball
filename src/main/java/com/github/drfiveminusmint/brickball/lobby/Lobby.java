@@ -240,7 +240,8 @@ public class Lobby implements ForwardingAudience {
         if (activeMatch != null)
             Brickball.getInstance().getMatchManager().endMatch(activeMatch);
         Brickball.getInstance().getLobbyList().unregisterLobby(this);
-        settingsMenu.destroy();
+        if (settingsMenu != null)
+            settingsMenu.destroy();
         return true;
     }
 
