@@ -161,8 +161,6 @@ public class Matchmaker extends BukkitRunnable {
         long time = System.currentTimeMillis();
         int ratingDifferencePenalty = Math.min( Math.min(candidate.getHighRating() - player.getRating(), 0),
                                                 Math.min(player.getRating() - candidate.getLowRating(), 0));
-        if (ratingDifferencePenalty < -100)
-            Brickball.getInstance().getLogger().log(Level.WARNING, "Very High discrepancy detected between players: " + ratingDifferencePenalty);
         int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(time - player.getJoinTime(), HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
         int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
         return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
@@ -179,11 +177,14 @@ public class Matchmaker extends BukkitRunnable {
             totalWait += time - player.getJoinTime();
         }
         float meanRating = (teams.getTeam1Rating() + teams.getTeam2Rating()+ 0f) / totalPlayers;
+        Brickball.getInstance().getLogger().log(Level.INFO, "meanRating = " + meanRating);
         double mqs = 10000f /
                 (Math.sqrt(sumRatingSquared - totalPlayers * Math.pow(meanRating,2))
                 + Math.pow(Math.abs(teams.getTeam1Rating() - teams.getTeam2Rating()), 1.2)
                 + 100);
+        Brickball.getInstance().getLogger().log(Level.INFO, "MQS = " + mqs);
         int finalScore = (int) (mqs * Math.pow(totalWait / totalPlayers, 0.25));
+        Brickball.getInstance().getLogger().log(Level.INFO, "Wait Score = ", Math.pow(totalWait / totalPlayers, 0.25));
         if (teams.getTeam1().size() != teams.getTeam2().size())
             finalScore -= 100; // Penalty for different sized teams
         return finalScore;
