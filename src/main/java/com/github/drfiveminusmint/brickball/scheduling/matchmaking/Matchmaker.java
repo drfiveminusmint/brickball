@@ -173,7 +173,11 @@ public class Matchmaker extends BukkitRunnable {
         long totalWait = 0;
         long time = System.currentTimeMillis();
         for (QueueingPlayer player : teams.getTeam1()) {
-            sumRatingSquared += (int) Math.pow(player.getRating(), 2) + 1;
+            sumRatingSquared += (int) (Math.pow(player.getRating(), 2) + 1);
+            totalWait += time - player.getJoinTime();
+        }
+        for (QueueingPlayer player : teams.getTeam2()) {
+            sumRatingSquared += (int) (Math.pow(player.getRating(), 2) + 1);
             totalWait += time - player.getJoinTime();
         }
         float meanRating = (teams.getTeam1Rating() + teams.getTeam2Rating()+ 0f) / totalPlayers;
