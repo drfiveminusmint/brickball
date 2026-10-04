@@ -163,7 +163,7 @@ public class Matchmaker extends BukkitRunnable {
                                                 Math.min(player.getRating() - candidate.getLowRating(), 0));
         if (ratingDifferencePenalty < -100)
             Brickball.getInstance().getLogger().log(Level.WARNING, "Very High discrepancy detected between players: " + ratingDifferencePenalty);
-        int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(player.getJoinTime() - time, HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
+        int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(time - player.getJoinTime(), HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
         int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
         return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
     }
