@@ -173,18 +173,19 @@ public class Matchmaker extends BukkitRunnable {
         long totalWait = 0;
         long time = System.currentTimeMillis();
         for (QueueingPlayer player : teams.getTeam1()) {
-            sumRatingSquared += (int) Math.pow(player.getRating(), 2);
+            sumRatingSquared += (int) Math.pow(player.getRating(), 2) + 1;
             totalWait += time - player.getJoinTime();
         }
         float meanRating = (teams.getTeam1Rating() + teams.getTeam2Rating()+ 0f) / totalPlayers;
         Brickball.getInstance().getLogger().log(Level.INFO, "meanRating = " + meanRating);
+        Brickball.getInstance().getLogger().log(Level.WARNING, "This number should never be negative: " + (sumRatingSquared - totalPlayers * Math.pow(meanRating,2)));
         double mqs = 10000f /
                 (Math.sqrt(sumRatingSquared - totalPlayers * Math.pow(meanRating,2))
                 + Math.pow(Math.abs(teams.getTeam1Rating() - teams.getTeam2Rating()), 1.2)
                 + 100);
         Brickball.getInstance().getLogger().log(Level.INFO, "MQS = " + mqs);
         int finalScore = (int) (mqs * Math.pow((1.0d * totalWait) / totalPlayers, 0.25));
-        Brickball.getInstance().getLogger().log(Level.INFO, "Wait Score = ", Math.pow((1.0d * totalWait) / totalPlayers, 0.25));
+        Brickball.getInstance().getLogger().log(Level.INFO, "Wait Score = " + Math.pow((1.0d * totalWait) / totalPlayers, 0.25));
         if (teams.getTeam1().size() != teams.getTeam2().size())
             finalScore -= 100; // Penalty for different sized teams
         return finalScore;
