@@ -290,7 +290,7 @@ public class BrickballMatch implements ForwardingAudience {
         cleanupPlayer(player);
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" left the match.")));
         if (players.remove(player)) {
-            if (host.equals(player)) {
+            if (host != null && host.equals(player)) {
                 if (!players.isEmpty()) {
                     host = (Player) players.toArray()[0];
                     host.sendMessage(Component.text("[Brickball] You are now the match host."));

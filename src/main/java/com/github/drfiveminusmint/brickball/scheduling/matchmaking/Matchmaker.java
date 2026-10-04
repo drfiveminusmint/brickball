@@ -4,6 +4,11 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.stats.FormatStats;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -109,9 +114,15 @@ public class Matchmaker extends BukkitRunnable {
                     Lobby lobby = new Lobby(format, false);
                     for (QueueingPlayer player : finalTeams.getTeam1()) {
                         lobby.join(player.getPlayer(), 0);
+                        player.getPlayer().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
+                        player.getPlayer().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
+                                Component.text("To ready use ", NamedTextColor.GOLD).append(Component.text("/brickball ready", NamedTextColor.AQUA))));
                     }
                     for (QueueingPlayer player : finalTeams.getTeam2()) {
                         lobby.join(player.getPlayer(), 1);
+                        player.getPlayer().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
+                        player.getPlayer().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
+                                Component.text("To ready use ", NamedTextColor.GRAY).append(Component.text("/brickball ready", NamedTextColor.AQUA))));
                     }
                 });
                 return;
@@ -127,8 +138,7 @@ public class Matchmaker extends BukkitRunnable {
         int rating = Brickball.getInstance().getFormatStats(format).getPlayerStat(player, FormatStats.TrackedStat.RATING);
         if (rating <= 0)
             rating = 1000;
-        queue.add(new QueueingPlayer(player, System.currentTimeMillis(),
-                rating));
+        queue.add(new QueueingPlayer(player, System.currentTimeMillis(), rating));
     }
 
     public boolean hasPlayer (Player player) {

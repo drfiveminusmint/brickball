@@ -64,6 +64,9 @@ public class SettingsMenu {
             // When this button is clicked, set the next map to the corresponding ArenaTemplate
             button.setOnClick(((player, clickableElement, clickType) -> lobby.setMap(map)));
             mapSelectionPage.setElement(mapsFound++, button);
+            // Prevent overflow
+            if (mapsFound >= mapSelectionPage.getInventory().getSize())
+                break;
         }
         // return to main page on closing
         mapSelectionPage.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> mainPage.display(player), 1)));
