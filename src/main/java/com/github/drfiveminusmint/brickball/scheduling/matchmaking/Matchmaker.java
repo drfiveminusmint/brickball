@@ -155,7 +155,7 @@ public class Matchmaker extends BukkitRunnable {
     private int evaluateAddition(MatchCandidate candidate, QueueingPlayer player) {
         Brickball.getInstance().getLogger().log(Level.INFO, "Evaluating player addition: " + player.getPlayer().getName());
         int size = candidate.getPlayers().size();
-        if (size >= format.getMaxPlayersPerTeam())
+        if (size >= format.getMaxPlayersPerTeam() * 2)
             return -1; // never allow this
         // Score whether this addition is likely to make the match better or worse
         long time = System.currentTimeMillis();
@@ -165,9 +165,7 @@ public class Matchmaker extends BukkitRunnable {
             Brickball.getInstance().getLogger().log(Level.WARNING, "Very High discrepancy detected between players: " + ratingDifferencePenalty);
         int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(player.getJoinTime() - time, HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
         int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
-        //debug
-        return 100;
-        // return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
+        return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
     }
 
     private int scoreTeams(PreliminaryTeams teams) {
