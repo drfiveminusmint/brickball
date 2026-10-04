@@ -47,19 +47,15 @@ public class Matchmaker extends BukkitRunnable {
             // build out the tree by adding players to existing candidates
             HashSet<QueueingPlayer> processed = new HashSet<>(queue.size());
             while (!queue.isEmpty()) {
-                Brickball.getInstance().getLogger().log(Level.INFO, "Tree Building started");
                 QueueingPlayer player = queue.poll();
                 processed.add(player);
                 HashSet<MatchCandidate> newCandidates = new HashSet<>();
                 for (MatchCandidate candidate : candidates)
                     if (evaluateAddition(candidate, player) > 0) {
-                        Brickball.getInstance().getLogger().log(Level.INFO, "Adding match candidate");
                         MatchCandidate clone = candidate.clone();
                         clone.addPlayer(player);
                         newCandidates.add(clone);
                     }
-                if (!newCandidates.isEmpty())
-                    Brickball.getInstance().getLogger().log(Level.WARNING, "New candidates found");
                 candidates.addAll(newCandidates);
             }
             // We now have a set of candidates to create teams from
@@ -68,14 +64,14 @@ public class Matchmaker extends BukkitRunnable {
             PreliminaryTeams teams = null;
             int teamsScore = MINIMUM_SCORE;
             for (MatchCandidate candidate : candidates) {
-                Brickball.getInstance().getLogger().log(Level.INFO, "Match candidate found! " + players2String(candidate.getPlayers()));
+                //Brickball.getInstance().getLogger().log(Level.INFO, "Match candidate found! " + players2String(candidate.getPlayers()));
                 if (candidate.getPlayers().size() >= 2 * format.getMinPlayersPerTeam()) {
                     PreliminaryTeams replacement = new PreliminaryTeams(candidate, format);
                     int score = scoreTeams(replacement);
-                    Brickball.getInstance().getLogger().log(Level.INFO, "Built teams: " + players2String(replacement.getTeam1())+ players2String(replacement.getTeam2()));
-                    Brickball.getInstance().getLogger().log(Level.INFO, "Teams scored " + score);
+                    //Brickball.getInstance().getLogger().log(Level.INFO, "Built teams: " + players2String(replacement.getTeam1())+ players2String(replacement.getTeam2()));
+                    //Brickball.getInstance().getLogger().log(Level.INFO, "Teams scored " + score);
                     if (score > teamsScore) {
-                        Brickball.getInstance().getLogger().log(Level.INFO, "New high score!");
+                        //Brickball.getInstance().getLogger().log(Level.INFO, "New high score!");
                         teamsScore = score;
                         teams = replacement;
                     }
@@ -153,7 +149,6 @@ public class Matchmaker extends BukkitRunnable {
     }
 
     private int evaluateAddition(MatchCandidate candidate, QueueingPlayer player) {
-        Brickball.getInstance().getLogger().log(Level.INFO, "Evaluating player addition: " + player.getPlayer().getName());
         int size = candidate.getPlayers().size();
         if (size >= format.getMaxPlayersPerTeam() * 2)
             return -1; // never allow this
@@ -181,15 +176,11 @@ public class Matchmaker extends BukkitRunnable {
             totalWait += time - player.getJoinTime();
         }
         float meanRating = (teams.getTeam1Rating() + teams.getTeam2Rating()+ 0f) / totalPlayers;
-        Brickball.getInstance().getLogger().log(Level.INFO, "meanRating = " + meanRating);
-        Brickball.getInstance().getLogger().log(Level.WARNING, "This number should never be negative: " + (sumRatingSquared - totalPlayers * Math.pow(meanRating,2)));
         double mqs = 10000f /
                 (Math.sqrt(sumRatingSquared - totalPlayers * Math.pow(meanRating,2))
                 + Math.pow(Math.abs(teams.getTeam1Rating() - teams.getTeam2Rating()), 1.2)
                 + 100);
-        Brickball.getInstance().getLogger().log(Level.INFO, "MQS = " + mqs);
         int finalScore = (int) (mqs * Math.pow((1.0d * totalWait) / totalPlayers, 0.25));
-        Brickball.getInstance().getLogger().log(Level.INFO, "Wait Score = " + Math.pow((1.0d * totalWait) / totalPlayers, 0.25));
         if (teams.getTeam1().size() != teams.getTeam2().size())
             finalScore -= 100; // Penalty for different sized teams
         return finalScore;

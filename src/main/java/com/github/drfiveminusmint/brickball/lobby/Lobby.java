@@ -104,7 +104,7 @@ public class Lobby implements ForwardingAudience {
         else
             player.setScoreboard(lobbyScoreboard);
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" joined the lobby.")));
-        player.sendMessage(Component.text("Current map: ", NamedTextColor.GOLD).append(Component.text(nextMap.getID(), NamedTextColor.AQUA)));
+        //player.sendMessage(Component.text("Current map: ", NamedTextColor.GOLD).append(Component.text(nextMap.getID(), NamedTextColor.AQUA)));
         player.sendMessage(Component.text("[Join Team 1]", teamColors[0].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 1")));
         player.sendMessage(Component.text("[Join Team 2]", teamColors[1].textColor).clickEvent(ClickEvent.runCommand("/brickball jointeam 2")));
         player.sendMessage(Component.text("[Ready]", NamedTextColor.AQUA).clickEvent(ClickEvent.runCommand("/brickball ready")));
