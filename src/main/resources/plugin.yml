@@ -2,7 +2,7 @@ name: Brickball
 version: Alpha-3.0
 main: com.github.drfiveminusmint.brickball.Brickball
 author: drfiveminusminus
-depend: [WorldEdit, WorldGuard]
+depend: [WorldEdit, WorldGuard, FiveUI]
 softdepend: [Multiverse-Core]
 api-version: '1.21'
 commands:

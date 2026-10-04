@@ -109,6 +109,7 @@ public final class Brickball extends JavaPlugin {
         int numMatchmakers = 0;
         // Load formats and stats
         for (File file : formatsFolder.listFiles()) {
+            if (file.isDirectory()) continue;
             YamlConfiguration formatConfig = new YamlConfiguration();
             try {
                 formatConfig.load(file);
