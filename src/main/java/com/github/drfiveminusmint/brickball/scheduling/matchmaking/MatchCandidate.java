@@ -29,7 +29,8 @@ public class MatchCandidate implements Cloneable {
     public MatchCandidate clone() {
         MatchCandidate result = new MatchCandidate();
         result.lowRating = lowRating; result.highRating = highRating;
-        result.players = (HashSet<QueueingPlayer>) players.clone();
+        result.players = new HashSet<>();
+        result.players.addAll(players);
         return result;
     }
 }

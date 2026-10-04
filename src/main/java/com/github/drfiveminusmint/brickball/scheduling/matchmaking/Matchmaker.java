@@ -47,15 +47,19 @@ public class Matchmaker extends BukkitRunnable {
             // build out the tree by adding players to existing candidates
             HashSet<QueueingPlayer> processed = new HashSet<>(queue.size());
             while (!queue.isEmpty()) {
+                Brickball.getInstance().getLogger().log(Level.INFO, "Tree Building started");
                 QueueingPlayer player = queue.poll();
                 processed.add(player);
                 HashSet<MatchCandidate> newCandidates = new HashSet<>();
                 for (MatchCandidate candidate : candidates)
                     if (evaluateAddition(candidate, player) > 0) {
+                        Brickball.getInstance().getLogger().log(Level.INFO, "Adding match candidate");
                         MatchCandidate clone = candidate.clone();
                         clone.addPlayer(player);
                         newCandidates.add(clone);
                     }
+                if (!newCandidates.isEmpty())
+                    Brickball.getInstance().getLogger().log(Level.WARNING, "New candidates found");
                 candidates.addAll(newCandidates);
             }
             // We now have a set of candidates to create teams from
@@ -149,6 +153,7 @@ public class Matchmaker extends BukkitRunnable {
     }
 
     private int evaluateAddition(MatchCandidate candidate, QueueingPlayer player) {
+        Brickball.getInstance().getLogger().log(Level.INFO, "Evaluating player addition: " + player.getPlayer().getName());
         int size = candidate.getPlayers().size();
         if (size >= format.getMaxPlayersPerTeam())
             return -1; // never allow this
@@ -160,9 +165,7 @@ public class Matchmaker extends BukkitRunnable {
             Brickball.getInstance().getLogger().log(Level.WARNING, "Very High discrepancy detected between players: " + ratingDifferencePenalty);
         int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(player.getJoinTime() - time, HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
         int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
-        // debug
-        return 1;
-        //return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
+        return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
     }
 
     private int scoreTeams(PreliminaryTeams teams) {
