@@ -125,7 +125,7 @@ public class Matchmaker extends BukkitRunnable {
 
     public void addPlayer(Player player) {
         int rating = Brickball.getInstance().getFormatStats(format).getPlayerStat(player, FormatStats.TrackedStat.RATING);
-        if (rating == -1)
+        if (rating <= 0)
             rating = 1000;
         queue.add(new QueueingPlayer(player, System.currentTimeMillis(),
                 rating));

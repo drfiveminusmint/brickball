@@ -3,7 +3,7 @@ package com.github.drfiveminusmint.brickball.scheduling.matchmaking;
 import java.util.HashSet;
 
 public class MatchCandidate implements Cloneable {
-    private int highRating = Integer.MAX_VALUE, lowRating = -1;
+    private int highRating = -1, lowRating = Integer.MAX_VALUE;
     private HashSet<QueueingPlayer> players = new HashSet<>();
 
     public void addPlayer(QueueingPlayer player) {
