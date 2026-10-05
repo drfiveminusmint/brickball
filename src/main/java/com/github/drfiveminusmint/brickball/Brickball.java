@@ -14,6 +14,7 @@ import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
 import com.github.drfiveminusmint.brickball.scheduling.LoadStatsTask;
 import com.github.drfiveminusmint.brickball.scheduling.matchmaking.Matchmaker;
 import com.github.drfiveminusmint.brickball.stats.FormatStats;
+import com.github.drfiveminusmint.brickball.stats.Leaderboard;
 import com.github.drfiveminusmint.brickball.ui.LobbyCreationMenu;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
@@ -49,6 +50,7 @@ public final class Brickball extends JavaPlugin {
     private final ArrayList<ArenaTemplate> backroundGenerateMaps = new ArrayList<>();
     private final HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap<>();
     private final HashMap<BrickballFormat, Matchmaker> matchmakers = new HashMap<>();
+    private final HashMap<BrickballFormat, Leaderboard> leaderboards = new HashMap<>();
     private World matchWorld;
     private BrickballScheduler scheduler;
     private Page mainUI;
@@ -128,7 +130,9 @@ public final class Brickball extends JavaPlugin {
                     matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
                     matchmakers.put(format, matchmaker);
                 }
-
+                // Create leaderboards for rated modes
+                if (format.getIsRated())
+                    leaderboards.put(format, new Leaderboard(format));
                 getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
@@ -158,6 +162,7 @@ public final class Brickball extends JavaPlugin {
         // Create UI Pages
         mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
         Page matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
+        Page leaderboardUI = new Page(Component.text("Leaderboards", NamedTextColor.GOLD, TextDecoration.BOLD), InventoryType.CHEST);
 
         // Build main UI page
         mainUI.setElement(10, new LinkButton(
@@ -165,6 +170,11 @@ public final class Brickball extends JavaPlugin {
                 .name(Component.text("Find Match", NamedTextColor.YELLOW))
                 .itemStack(),
                 matchmakingUI));
+        mainUI.setElement(13, new LinkButton(
+                new ItemStackBuilder(Material.NETHER_STAR, 1)
+                        .name(Component.text("Leaderboards", NamedTextColor.YELLOW))
+                        .itemStack(),
+                leaderboardUI));
         StaticButton createCustomButton = new StaticButton(new ItemStackBuilder(Material.ANVIL, 1)
                 .name(Component.text("Create Custom Match", NamedTextColor.YELLOW))
                 .itemStack());
@@ -177,9 +187,18 @@ public final class Brickball extends JavaPlugin {
             StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
             button.setOnClick(((player, clickableElement, clickType) -> startPlayerQueue(player, format)));
             matchmakingUI.setElement(i++, button);
+            if (i >= matchmakingUI.getInventory().getSize())
+                break;
         }
         matchmakingUI.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1)));
 
+        // Build leaderboards page
+        i = 0;
+        for (BrickballFormat format : leaderboards.keySet()) {
+            leaderboardUI.setElement(i++, new LinkButton(format.getUnselectedDisplayItem(), leaderboards.get(format).getDisplayPage()));
+            if (i >= leaderboardUI.getInventory().getSize())
+                break;
+        }
 
     }
 
@@ -210,6 +229,8 @@ public final class Brickball extends JavaPlugin {
             result |= matchmaker.removePlayer(player);
         return result;
     }
+
+    public Leaderboard getLeaderboard(BrickballFormat format) { return leaderboards.get(format); }
 
     public boolean isBackgroundGenerationEnabled() {
         return doBackgroundArenaGeneration;

@@ -3,7 +3,7 @@ package com.github.drfiveminusmint.brickball.scheduling.matchmaking;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class QueueingPlayer implements Comparable {
+public class QueueingPlayer implements Comparable<QueueingPlayer> {
     private final Player player;
     private final long joinTime;
     private final int rating;
@@ -26,9 +26,7 @@ public class QueueingPlayer implements Comparable {
     }
 
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (! (o instanceof QueueingPlayer queueingPlayer))
-            return 0;
+    public int compareTo(@NotNull QueueingPlayer queueingPlayer) {
         // if this fails we have bigger problems
         return (int) (queueingPlayer.joinTime - joinTime);
     }

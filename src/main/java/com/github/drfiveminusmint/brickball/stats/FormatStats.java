@@ -17,9 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -257,6 +255,13 @@ public class FormatStats {
         } catch (IOException exception) {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "Error: something went wrong writing to " + f.getName());
         }
+    }
+
+    public Set<OfflinePlayer> getPlayers() {
+        HashSet<OfflinePlayer> players = new HashSet<>();
+        for (UUID uuid : perPlayerStats.keySet())
+            players.add(Bukkit.getOfflinePlayer(uuid));
+        return players;
     }
 
     public enum TrackedStat {
