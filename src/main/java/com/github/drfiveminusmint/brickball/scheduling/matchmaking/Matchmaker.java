@@ -32,13 +32,21 @@ public class Matchmaker extends BukkitRunnable {
 
     @Override
     public void run() {
+        // notify players who are in the queue (synchronously)
+        final int size = queue.size();
+        for (QueueingPlayer player : queue) {
+            Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> player.getPlayer().sendActionBar(Component.text("Players in queue: ")
+                    .append(Component.text(size, (size > format.getMinPlayersPerTeam()*2) ? NamedTextColor.GREEN : NamedTextColor.YELLOW))
+                    .append(Component.text(" Queue time: ", NamedTextColor.WHITE))
+                    .append(Component.text(String.format("%02d:%02d", ((System.currentTimeMillis() - player.getJoinTime()) / 60000) % 60, ((System.currentTimeMillis() - player.getJoinTime()) / 1000) % 60), NamedTextColor.AQUA))));
+        }
         // don't bother if there aren't enough players to create a match
-        if (queue.size() < format.getMinPlayersPerTeam() * 2 || queue.isEmpty())
+        if (size < format.getMinPlayersPerTeam() * 2 || queue.isEmpty())
             return;
-        Brickball.getInstance().getLogger().log(Level.INFO, "Attempting to matchmake for format " + format.getName());
+        // Brickball.getInstance().getLogger().log(Level.INFO, "Attempting to matchmake for format " + format.getName());
         // Prioritize finding a match for the player who's been queueing the longest
         // If absolutely no matches can be found for them, proceed to the next player in the queue.
-        HashSet<QueueingPlayer> removed = new HashSet<>(queue.size()/2 + 1);
+        HashSet<QueueingPlayer> removed = new HashSet<>(size/2 + 1);
         while (!queue.isEmpty()) {
             HashSet<MatchCandidate> candidates = new HashSet<>();
             MatchCandidate firstCandidate = new MatchCandidate();

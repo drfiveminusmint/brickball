@@ -122,7 +122,7 @@ public final class Brickball extends JavaPlugin {
                 // load stats from the CSV
                 File statsFile = new File(statsFolder, format.getName() + ".csv");
                 if (!statsFile.exists()) statsFile.createNewFile();
-                scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats));
+                scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats, format));
                 // create matchmakers if necessary
                 if (format.getDoMatchmaking()) {
                     Matchmaker matchmaker = new Matchmaker(format);
@@ -131,8 +131,10 @@ public final class Brickball extends JavaPlugin {
                     matchmakers.put(format, matchmaker);
                 }
                 // Create leaderboards for rated modes
-                if (format.getIsRated())
-                    leaderboards.put(format, new Leaderboard(format));
+                if (format.getIsRated()) {
+                    Leaderboard board = new Leaderboard(format);
+                    leaderboards.put(format, board);
+                }
                 getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
