@@ -2,6 +2,7 @@ package com.github.drfiveminusmint.brickball.lobby;
 
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ public class LobbyList {
     private final HashMap<Player, Lobby> playerMap = new HashMap<>();
 
     // Gets the lobby the specified player is in
+    @Nullable
     public Lobby getLobbyByPlayer(Player player) {
         return playerMap.get(player);
     }

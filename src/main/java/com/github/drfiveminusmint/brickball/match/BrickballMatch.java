@@ -38,7 +38,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -297,7 +301,7 @@ public class BrickballMatch implements ForwardingAudience {
         cleanupPlayer(player);
         sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" left the match.")));
         if (players.remove(player)) {
-            if (host.equals(player)) {
+            if (host != null && host.equals(player)) {
                 if (!players.isEmpty()) {
                     host = (Player) players.toArray()[0];
                     host.sendMessage(Component.text("[Brickball] You are now the match host."));

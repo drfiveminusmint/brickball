@@ -1,9 +1,7 @@
 package com.github.drfiveminusmint.brickball.scheduling;
 
-import com.github.drfiveminusmint.brickball.Brickball;
-import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
-import java.util.concurrent.ConcurrentLinkedQueue;
+
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class BrickballTaskManager extends BukkitRunnable {

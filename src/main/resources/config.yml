@@ -4,8 +4,8 @@ maxMatches: 16
 arenaMaxSize: 240
 # The default world to set up Brickball matches in. Don't set this to any world you care about.
 world: brickball
-# Set to true to load in an arena from each template on server startup
-preloadArenas: false
+# List of maps to always keep a copy of loaded
+backgroundGenerateMaps: []
 
 # Default match settings
 defaultSettings:
