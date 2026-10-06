@@ -72,7 +72,7 @@ public class Leaderboard {
             }
             // copy to our top players
             // asynchronously modifying top[] probably doesn't matter here, because we're updating it next tick anyway
-            for(int i = 0; i < MAX_SIZE; i++)
+            for(int i = 0; i < MAX_SIZE && i < list.size(); i++)
                 top[i] = list.get(i);
         }
         // This has to be run in the main thread
