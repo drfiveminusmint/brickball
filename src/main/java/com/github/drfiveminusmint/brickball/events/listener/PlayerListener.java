@@ -190,6 +190,7 @@ public class PlayerListener implements Listener {
         Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(event.getPlayer());
         if (lobby != null)
             lobby.leave(event.getPlayer());
+        Brickball.getInstance().endPlayerQueue(event.getPlayer());
     }
 
     // effects that trigger when a player recieves the brick by any means
