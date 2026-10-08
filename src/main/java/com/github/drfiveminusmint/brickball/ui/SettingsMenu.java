@@ -69,7 +69,7 @@ public class SettingsMenu {
                 break;
         }
         // return to main page on closing
-        mapSelectionPage.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> mainPage.display(player), 1)));
+        mapSelectionPage.setOnClose(((player, container, reason) -> Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> mainPage.display(player), 1)));
 
         // Link main page to map selection page
         mainPage.setElement(8, new LinkButton(
@@ -117,7 +117,7 @@ public class SettingsMenu {
         });
         result.setOnClick(((player, clickableElement, clickType) -> {
             TextInput numberInput = new TextInput(Component.text(humanName, NamedTextColor.YELLOW, TextDecoration.BOLD), player);
-            numberInput.setOnClose((player1, container) -> {
+            numberInput.setOnClose((player1, container, reason) -> {
                 // destroy the interface to prevent resource leak
                 FiveUI.getInstance().getUIManager().unregisterInterface(numberInput);
                 // return to main page

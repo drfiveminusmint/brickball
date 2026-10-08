@@ -30,6 +30,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -187,20 +188,35 @@ public final class Brickball extends JavaPlugin {
         int i = 0;
         for (BrickballFormat format : matchmakers.keySet()) {
             StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
-            button.setOnClick(((player, clickableElement, clickType) -> startPlayerQueue(player, format)));
+            button.setOnClick(((player, clickableElement, clickType) -> {
+                startPlayerQueue(player, format);
+                player.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+            }));
             matchmakingUI.setElement(i++, button);
             if (i >= matchmakingUI.getInventory().getSize())
                 break;
         }
-        matchmakingUI.setOnClose(((player, container) -> Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1)));
+        matchmakingUI.setOnClose(((player, container, reason) ->  {
+            if (reason != InventoryCloseEvent.Reason.PLUGIN)
+                Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1);
+        }));
 
         // Build leaderboards page
         i = 0;
         for (BrickballFormat format : leaderboards.keySet()) {
             leaderboardUI.setElement(i++, new LinkButton(format.getUnselectedDisplayItem(), leaderboards.get(format).getDisplayPage()));
+            // Link the leaderboard page back to the main leaderboards UI page
+            leaderboards.get(format).getDisplayPage().setOnClose(((player, container, reason) -> {
+                if (reason != InventoryCloseEvent.Reason.PLUGIN)
+                    Bukkit.getScheduler().runTaskLater(this, () -> leaderboardUI.display(player), 1);
+            }));
             if (i >= leaderboardUI.getInventory().getSize())
                 break;
         }
+        leaderboardUI.setOnClose(((player, container, reason) ->  {
+            if (reason != InventoryCloseEvent.Reason.PLUGIN)
+                Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1);
+        }));
 
     }
 
