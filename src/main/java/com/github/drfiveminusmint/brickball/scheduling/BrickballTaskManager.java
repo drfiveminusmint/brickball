@@ -5,7 +5,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class BrickballTaskManager extends BukkitRunnable {
-    private int tasksPerTick = 1;
+    private int tasksPerTick;
     private boolean shutdown = false;
     private final PriorityBlockingQueue<PriorityTask> tasks = new PriorityBlockingQueue<>();
 

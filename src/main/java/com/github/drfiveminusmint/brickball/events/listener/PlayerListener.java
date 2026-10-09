@@ -94,9 +94,10 @@ public class PlayerListener implements Listener {
             return;
         }
         if (player.getRespawnLocation() == null) Brickball.getInstance().getLogger().log(Level.SEVERE, "UH OH");
-        if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0)
+        if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0) {
             player.setGameMode(GameMode.SPECTATOR);
             respawnActionBar(player, playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
+        }
         if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) {
             new BukkitRunnable() {
                 @Override

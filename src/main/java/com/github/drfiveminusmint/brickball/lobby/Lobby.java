@@ -38,13 +38,13 @@ public class Lobby implements ForwardingAudience {
     private @Nullable Player host;
     // Cosmetic scoreboard to display name colors. Has no objectives.
     private final Scoreboard lobbyScoreboard;
-    private Objective cosmeticObjective;
+    private final Objective cosmeticObjective;
     private final Team[] lobbyTeams = new Team[3];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE, BrickballColor.LIGHT_GRAY, BrickballColor.LIGHT_GRAY};
     private boolean isPrivate;
     private @Nullable BrickballMatch activeMatch;
     private ArenaTemplate nextMap;
-    private SettingsMenu settingsMenu;
+    private final SettingsMenu settingsMenu;
 
     // Constructor
     // Automatically registers itself with the LobbyManager
@@ -232,9 +232,7 @@ public class Lobby implements ForwardingAudience {
     }
 
     public boolean shutdown() {
-        Set<Player> cachedPlayers = new HashSet<>();
-        for (Player player : readyPlayers.keySet())
-            cachedPlayers.add(player);
+        Set<Player> cachedPlayers = new HashSet<>(readyPlayers.keySet());
         for (Player player : cachedPlayers)
             leave(player);
         if (activeMatch != null)
@@ -322,7 +320,7 @@ public class Lobby implements ForwardingAudience {
     }
 
     public void setHost(@Nullable Player newHost) { host = newHost;}
-    public Player getHost() { return host;}
+    public @Nullable Player getHost() { return host;}
     public BrickballFormat getFormat() { return format; }
     public ArenaTemplate getNextMap() { return nextMap; }
 

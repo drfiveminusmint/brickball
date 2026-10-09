@@ -7,10 +7,10 @@ public class MatchCandidate implements Cloneable {
     private HashSet<QueueingPlayer> players = new HashSet<>();
 
     public void addPlayer(QueueingPlayer player) {
-        if (player.getRating() > highRating)
-            highRating = player.getRating();
-        if (player.getRating() < lowRating)
-            lowRating = player.getRating();
+        if (player.rating() > highRating)
+            highRating = player.rating();
+        if (player.rating() < lowRating)
+            lowRating = player.rating();
         players.add(player);
     }
 

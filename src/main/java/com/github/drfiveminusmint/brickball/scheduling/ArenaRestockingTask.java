@@ -2,9 +2,7 @@ package com.github.drfiveminusmint.brickball.scheduling;
 
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
-import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
-import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.github.drfiveminusmint.brickball.util.Counter;
 import org.jetbrains.annotations.NotNull;
@@ -15,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ArenaRestockingTask implements PriorityTask {
 
     int priority = -5;
-    private BrickballMatch[] matchList;
-    private ConcurrentHashMap<String, Counter> templateCounts = new ConcurrentHashMap<>();
+    private final BrickballMatch[] matchList;
+    private final ConcurrentHashMap<String, Counter> templateCounts = new ConcurrentHashMap<>();
 
     public ArenaRestockingTask(BrickballMatch[] matches, ArrayList<ArenaTemplate> templateIDSet)
     {

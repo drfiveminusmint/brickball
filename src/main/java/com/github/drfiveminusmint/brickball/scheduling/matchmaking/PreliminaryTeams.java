@@ -1,7 +1,6 @@
 package com.github.drfiveminusmint.brickball.scheduling.matchmaking;
 
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
-import org.bukkit.entity.Player;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,14 +18,14 @@ public class PreliminaryTeams {
             if (team2.size() < (candidate.getPlayers().size()+1)/2) {
                 if (team1Rating <= team2Rating) {
                     team1.add(strongest);
-                    team1Rating += strongest.getRating();
+                    team1Rating += strongest.rating();
                 } else {
                     team2.add(strongest);
-                    team2Rating += strongest.getRating();
+                    team2Rating += strongest.rating();
                 }
             } else {
                 team1.add(strongest);
-                team1Rating += strongest.getRating();
+                team1Rating += strongest.rating();
             }
         }
     }
@@ -51,8 +50,8 @@ public class PreliminaryTeams {
         int maxRating = -1;
         QueueingPlayer result = null;
         for (QueueingPlayer player : players)
-            if (player.getRating() >  maxRating) {
-                maxRating = player.getRating();
+            if (player.rating() >  maxRating) {
+                maxRating = player.rating();
                 result = player;
             }
         return result;

@@ -16,7 +16,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.logging.Level;
 
 public class Matchmaker extends BukkitRunnable {
     private static final double HEURISTIC_TIME_COEFFICIENT = 5.0, HEURISTIC_TIME_POWER = 0.25;
@@ -35,10 +34,10 @@ public class Matchmaker extends BukkitRunnable {
         // notify players who are in the queue (synchronously)
         final int size = queue.size();
         for (QueueingPlayer player : queue) {
-            Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> player.getPlayer().sendActionBar(Component.text("Players in queue: ")
+            Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> player.player().sendActionBar(Component.text("Players in queue: ")
                     .append(Component.text(size, (size > format.getMinPlayersPerTeam()*2) ? NamedTextColor.GREEN : NamedTextColor.YELLOW))
                     .append(Component.text(" Queue time: ", NamedTextColor.WHITE))
-                    .append(Component.text(String.format("%02d:%02d", ((System.currentTimeMillis() - player.getJoinTime()) / 60000) % 60, ((System.currentTimeMillis() - player.getJoinTime()) / 1000) % 60), NamedTextColor.AQUA))));
+                    .append(Component.text(String.format("%02d:%02d", ((System.currentTimeMillis() - player.joinTime()) / 60000) % 60, ((System.currentTimeMillis() - player.joinTime()) / 1000) % 60), NamedTextColor.AQUA))));
         }
         // don't bother if there aren't enough players to create a match
         if (size < format.getMinPlayersPerTeam() * 2 || queue.isEmpty())
@@ -100,13 +99,13 @@ public class Matchmaker extends BukkitRunnable {
                     // run sanity check
                     boolean sanityCheck = true;
                     for (QueueingPlayer player : finalTeams.getTeam1())
-                        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player.getPlayer()) != null) {
+                        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player.player()) != null) {
                             // this player is already in a lobby
                             queue.remove(player);
                             sanityCheck = false;
                         }
                     for(QueueingPlayer player : finalTeams.getTeam2())
-                        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player.getPlayer()) != null) {
+                        if (Brickball.getInstance().getLobbyList().getLobbyByPlayer(player.player()) != null) {
                             // this player is already in a lobby
                             queue.remove(player);
                             sanityCheck = false;
@@ -115,21 +114,21 @@ public class Matchmaker extends BukkitRunnable {
                     if (!sanityCheck) return;
                     // Match accepted, remove all players from all queues
                     for (QueueingPlayer player : finalTeams.getTeam1())
-                        Brickball.getInstance().endPlayerQueue(player.getPlayer());
+                        Brickball.getInstance().endPlayerQueue(player.player());
                     for (QueueingPlayer player : finalTeams.getTeam2())
-                        Brickball.getInstance().endPlayerQueue(player.getPlayer());
+                        Brickball.getInstance().endPlayerQueue(player.player());
                     // create the lobby and place players within
                     Lobby lobby = new Lobby(format, false);
                     for (QueueingPlayer player : finalTeams.getTeam1()) {
-                        lobby.join(player.getPlayer(), 0);
-                        player.getPlayer().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
-                        player.getPlayer().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
+                        lobby.join(player.player(), 0);
+                        player.player().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
+                        player.player().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
                                 Component.text("To ready use ", NamedTextColor.GOLD).append(Component.text("/brickball ready", NamedTextColor.AQUA))));
                     }
                     for (QueueingPlayer player : finalTeams.getTeam2()) {
-                        lobby.join(player.getPlayer(), 1);
-                        player.getPlayer().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
-                        player.getPlayer().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
+                        lobby.join(player.player(), 1);
+                        player.player().playSound(Sound.sound(Key.key("ui.toast.challenge_complete"), Sound.Source.PLAYER, 1.0f, 1.0f));
+                        player.player().showTitle(Title.title(Component.text("Match Found!", NamedTextColor.GOLD),
                                 Component.text("To ready use ", NamedTextColor.GRAY).append(Component.text("/brickball ready", NamedTextColor.AQUA))));
                     }
                 });
@@ -151,7 +150,7 @@ public class Matchmaker extends BukkitRunnable {
 
     public boolean hasPlayer (Player player) {
         for (QueueingPlayer other : queue) {
-            if (other.getPlayer() == player)
+            if (other.player() == player)
                 return true;
         }
         return false;
@@ -159,7 +158,7 @@ public class Matchmaker extends BukkitRunnable {
 
     public boolean removePlayer (Player player) {
         for (QueueingPlayer other : queue) {
-            if (other.getPlayer() == player) {
+            if (other.player() == player) {
                 return queue.remove(other);
             }
         }
@@ -172,9 +171,9 @@ public class Matchmaker extends BukkitRunnable {
             return -1; // never allow this
         // Score whether this addition is likely to make the match better or worse
         long time = System.currentTimeMillis();
-        int ratingDifferencePenalty = Math.min( Math.min(candidate.getHighRating() - player.getRating(), 0),
-                                                Math.min(player.getRating() - candidate.getLowRating(), 0));
-        int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(time - player.getJoinTime(), HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
+        int ratingDifferencePenalty = Math.min( Math.min(candidate.getHighRating() - player.rating(), 0),
+                                                Math.min(player.rating() - candidate.getLowRating(), 0));
+        int queueTimeBonus = Math.max((int) (HEURISTIC_TIME_COEFFICIENT * Math.pow(time - player.joinTime(), HEURISTIC_TIME_POWER)), HEURISTIC_MAX_TIME_BONUS);
         int unfilledBonus = (size < format.getMinPlayersPerTeam()*2) ? HEURISTIC_UNFILLED_BONUS : 0;
         return ratingDifferencePenalty + queueTimeBonus + unfilledBonus;
     }
@@ -186,12 +185,12 @@ public class Matchmaker extends BukkitRunnable {
         long totalWait = 0;
         long time = System.currentTimeMillis();
         for (QueueingPlayer player : teams.getTeam1()) {
-            sumRatingSquared += (int) (Math.pow(player.getRating(), 2) + 1);
-            totalWait += time - player.getJoinTime();
+            sumRatingSquared += (int) (Math.pow(player.rating(), 2) + 1);
+            totalWait += time - player.joinTime();
         }
         for (QueueingPlayer player : teams.getTeam2()) {
-            sumRatingSquared += (int) (Math.pow(player.getRating(), 2) + 1);
-            totalWait += time - player.getJoinTime();
+            sumRatingSquared += (int) (Math.pow(player.rating(), 2) + 1);
+            totalWait += time - player.joinTime();
         }
         float meanRating = (teams.getTeam1Rating() + teams.getTeam2Rating()+ 0f) / totalPlayers;
         double mqs = 10000f /
@@ -207,7 +206,7 @@ public class Matchmaker extends BukkitRunnable {
     private String players2String(Collection<QueueingPlayer> players) {
         StringBuilder builder = new StringBuilder("[");
         for (QueueingPlayer player : players) {
-            builder.append(player.getPlayer().getName());
+            builder.append(player.player().getName());
             builder.append(" ");
         }
         builder.append("]");

@@ -4,8 +4,8 @@ import com.github.drfiveminusmint.brickball.stats.Leaderboard;
 import org.jetbrains.annotations.NotNull;
 
 public class LeaderboardUpdateTask implements PriorityTask {
-    private int priority = 0;
-    private Leaderboard leaderboard;
+    private final int priority = 0;
+    private final Leaderboard leaderboard;
 
     public LeaderboardUpdateTask(Leaderboard board) {
         leaderboard = board;

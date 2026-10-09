@@ -19,12 +19,13 @@ import java.util.List;
 import java.util.logging.Level;
 
 public class ArenaLoadTask implements SyncTask {
-    private int priority, count;
-    private List<File> files;
+    private final int priority;
+    private int count;
+    private final List<File> files;
     private final List<ClipboardHolder> loadedSchematics;
     private final List<BlockVector3> offsets;
-    private World world;
-    private BlockVector3 origin;
+    private final World world;
+    private final BlockVector3 origin;
     private final @Nullable BrickballMatch notifyMatch;
 
     public ArenaLoadTask(List<File> files, World world, BlockVector3 origin, int priority, @Nullable BrickballMatch notifyMatch) {

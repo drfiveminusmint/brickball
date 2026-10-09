@@ -8,8 +8,8 @@ import java.util.logging.Level;
 
 // Handle the synchronized parts of match creation
 public class CreateMatchTask implements SyncTask {
-    private int priority = 0;
-    private String id;
+    private final int priority;
+    private final String id;
 
     public CreateMatchTask(String templateID, int prio)
     {

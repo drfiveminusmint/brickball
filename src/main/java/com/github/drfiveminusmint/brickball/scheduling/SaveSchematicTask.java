@@ -13,9 +13,9 @@ import java.util.logging.Level;
 
 public class SaveSchematicTask implements IOTask {
     int priority;
-    private Clipboard schem;
-    private File dir;
-    private String fileName;
+    private final Clipboard schem;
+    private final File dir;
+    private final String fileName;
 
     public SaveSchematicTask(Clipboard clipboard, File directory, String name, int prio) {
         priority = prio;

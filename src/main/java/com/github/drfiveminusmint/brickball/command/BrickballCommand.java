@@ -391,7 +391,7 @@ public class BrickballCommand implements TabExecutor {
             return true;
         }
         if(!lobby.join(player, 2)) {
-            player.sendMessage(Component.text(String.format("You don't have permission to join this match.", args[1]), NamedTextColor.RED));
+            player.sendMessage(Component.text(String.format("You don't have permission to join %s's match.", args[1]), NamedTextColor.RED));
             return true;
         }
         return true;
@@ -500,6 +500,8 @@ public class BrickballCommand implements TabExecutor {
             }
             case null, default -> {
                 player.sendMessage(Component.text("Couldn't set match setting. This usually indicates a bug in the plugin. Contact the developer and show them this error:", NamedTextColor.DARK_RED));
+                if (value == null)
+                    player.sendMessage(Component.text("Couldn't edit match setting of type NULL", NamedTextColor.DARK_RED));
                 player.sendMessage(Component.text("Couldn't edit match setting of type " + value.getClass().getName(), NamedTextColor.DARK_RED));
                 return true;
             }

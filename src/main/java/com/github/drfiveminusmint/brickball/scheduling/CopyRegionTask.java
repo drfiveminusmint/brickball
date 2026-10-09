@@ -15,7 +15,7 @@ import java.io.File;
 import java.util.logging.Level;
 
 public class CopyRegionTask implements SyncTask {
-    int priority = 0;
+    int priority;
     Region area;
     BlockVector3 sourceLoc;
     World sourceWorld;

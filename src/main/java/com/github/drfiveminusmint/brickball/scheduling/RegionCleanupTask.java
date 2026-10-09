@@ -13,10 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.logging.Level;
 
 public class RegionCleanupTask implements SyncTask {
-    private int priority = 0;
-    private World world;
+    private final int priority;
+    private final World world;
 
-    private Region area;
+    private final Region area;
 
     public RegionCleanupTask(CuboidRegion region, World gameWorld, int prio) {
         priority = prio;
@@ -30,10 +30,10 @@ public class RegionCleanupTask implements SyncTask {
 
     @Override
     public void run() {
-        try (EditSession cleanupSession = WorldEdit.getInstance().newEditSession(world);){
+        try (EditSession cleanupSession = WorldEdit.getInstance().newEditSession(world)){
             cleanupSession.setBlocks(area,BlockTypes.AIR.getDefaultState().toBaseBlock());
         } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered an error cleaning up a region (is it up to date?)");
         }
     }
     @Override

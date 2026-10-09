@@ -4,12 +4,8 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.events.event.MatchEndEvent;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.scheduling.LeaderboardUpdateTask;
-import com.github.drfiveminusmint.brickball.stats.Leaderboard;
-import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-
-import java.util.logging.Level;
 
 public class MatchEndListener implements Listener {
     @EventHandler

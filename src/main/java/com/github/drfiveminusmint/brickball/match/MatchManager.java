@@ -127,7 +127,7 @@ public class MatchManager {
             match.leaveMatch(player);
         } finally {
             // Freeze if no players remain
-            if (((HashSet) match.audiences()).isEmpty())
+            if (((HashSet<?>) match.audiences()).isEmpty())
                 freezeMatch(match);
         }
         return true;
