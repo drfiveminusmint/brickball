@@ -1,5 +1,5 @@
 name: Brickball
-version: Alpha-3.0
+version: Alpha-3.0.1
 main: com.github.drfiveminusmint.brickball.Brickball
 author: drfiveminusminus
 depend: [WorldEdit, WorldGuard, FiveUI]
