@@ -16,6 +16,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType;
 
 public class LobbyCreationMenu {
@@ -27,7 +28,11 @@ public class LobbyCreationMenu {
         host = creator;
         // Create main page
         Page mainPage = new Page(Component.text("Create Custom Match"), InventoryType.CHEST);
-        mainPage.setOnClose((player, container) -> FiveUI.getInstance().getUIManager().unregisterInterface(container));
+        mainPage.setOnClose((player, container, reason) -> {
+            FiveUI.getInstance().getUIManager().unregisterInterface(container);
+            if (reason != InventoryCloseEvent.Reason.PLUGIN)
+                Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> Brickball.getInstance().getMainUI().display(player));
+        });
         // Add buttons for all formats to the page
         int formatsFound = 0;
         for (BrickballFormat candidate : Brickball.getInstance().getFormats()) {
@@ -63,7 +68,7 @@ public class LobbyCreationMenu {
             if (format == null)
                 return;
             build();
-            host.closeInventory();
+            host.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
         }));
         mainPage.setElement(26, createButton);
 

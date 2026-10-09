@@ -166,8 +166,4 @@ public class SettingsMenu {
         }));
         return result;
     }
-
-    private SelectorButton teamColorButton(int teamID) {
-
-    }
 }
