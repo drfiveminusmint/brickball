@@ -31,11 +31,10 @@ public class SchematicsPasteTask implements SyncTask {
         this.count = schematics.size();
     }
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (o instanceof PriorityTask task)
-            return priority - task.getPriority();
-        return 0;
+    public int compareTo(@NotNull PriorityTask task) {
+        return priority - task.getPriority();
     }
+
     @Override
     public void run() {
         int index = schematics.size() - count--;

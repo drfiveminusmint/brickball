@@ -38,10 +38,8 @@ public class ArenaLoadTask implements SyncTask {
         this.offsets = new ArrayList<>(files.size());
     }
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (o instanceof PriorityTask task)
-            return priority - task.getPriority();
-        return 0;
+    public int compareTo(@NotNull PriorityTask task) {
+        return priority - task.getPriority();
     }
     @Override
     public void run() {

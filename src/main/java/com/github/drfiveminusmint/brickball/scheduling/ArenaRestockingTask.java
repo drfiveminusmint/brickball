@@ -2,7 +2,9 @@ package com.github.drfiveminusmint.brickball.scheduling;
 
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
+import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
+import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchState;
 import com.github.drfiveminusmint.brickball.util.Counter;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +36,9 @@ public class ArenaRestockingTask implements PriorityTask {
         for (String s : templateCounts.keySet()) {
             if (templateCounts.get(s).value() == 0)
             {
-                Brickball.getInstance().getScheduler().submitTask(new CreateMatchTask(s, -5));
+                BrickballMatch match = Brickball.getInstance().getMatchManager().createMatch(Brickball.getInstance().getTemplateManager().findTemplate(s), -5);
+                if (match != null)
+                    Brickball.getInstance().getMatchManager().freezeMatch(match);
             }
         }
     }
@@ -45,10 +49,8 @@ public class ArenaRestockingTask implements PriorityTask {
     }
 
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (o instanceof SyncTask task)
-            return priority - task.getPriority();
-        return 0;
+    public int compareTo(@NotNull PriorityTask task) {
+        return priority - task.getPriority();
     }
 
     @Override

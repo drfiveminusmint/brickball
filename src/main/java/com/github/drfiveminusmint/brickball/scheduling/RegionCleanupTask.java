@@ -24,11 +24,10 @@ public class RegionCleanupTask implements SyncTask {
         area = region;
     }
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (o instanceof PriorityTask task)
-            return priority - task.getPriority();
-        return 0;
+    public int compareTo(@NotNull PriorityTask task) {
+        return priority - task.getPriority();
     }
+
     @Override
     public void run() {
         try (EditSession cleanupSession = WorldEdit.getInstance().newEditSession(world);){

@@ -31,16 +31,16 @@ public class LoadStatsTask implements IOTask {
     }
 
     @Override
-    public int compareTo(@NotNull Object o) {
-        if (o instanceof PriorityTask task)
-            return priority - task.getPriority();
-        return 0;
+    public int compareTo(@NotNull PriorityTask task) {
+        return priority - task.getPriority();
     }
 
     @Override
     public void run() {
         formatStats.readFromFile(file);
         if (Brickball.getInstance().getLeaderboard(format) != null)
-            Brickball.getInstance().getLeaderboard(format).update();
+            // update leaderboards
+            Brickball.getInstance().getScheduler().submitTask(
+                    new LeaderboardUpdateTask(Brickball.getInstance().getLeaderboard(format)));
     }
 }
