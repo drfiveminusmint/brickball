@@ -4,6 +4,7 @@ import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Color;
+import org.bukkit.Material;
 import org.jetbrains.annotations.Nullable;
 
 public class BrickballColor  {
@@ -11,24 +12,26 @@ public class BrickballColor  {
     public final NamedTextColor textColor;
     public final BaseBlock glassType;
     public final BaseBlock paneType;
-    public static final BrickballColor BLACK = new BrickballColor(Color.BLACK, NamedTextColor.BLACK, BlockTypes.BLACK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLACK_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor BLUE = new BrickballColor(Color.BLUE, NamedTextColor.BLUE, BlockTypes.BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLUE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor CYAN = new BrickballColor(Color.TEAL, NamedTextColor.DARK_AQUA, BlockTypes.CYAN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.CYAN_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor GRAY = new BrickballColor(Color.GRAY, NamedTextColor.DARK_GRAY, BlockTypes.GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GRAY_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor GREEN = new BrickballColor(Color.GREEN, NamedTextColor.DARK_GREEN, BlockTypes.GREEN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GREEN_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor LIGHT_BLUE = new BrickballColor(Color.AQUA, NamedTextColor.AQUA, BlockTypes.LIGHT_BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_BLUE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor LIGHT_GRAY = new BrickballColor(Color.SILVER, NamedTextColor.GRAY, BlockTypes.LIGHT_GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_GRAY_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor LIME = new BrickballColor(Color.LIME, NamedTextColor.GREEN, BlockTypes.LIME_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIME_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor MAGENTA = new BrickballColor(Color.FUCHSIA, NamedTextColor.LIGHT_PURPLE, BlockTypes.MAGENTA_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.MAGENTA_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor ORANGE = new BrickballColor(Color.ORANGE, NamedTextColor.GOLD, BlockTypes.ORANGE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.ORANGE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
+    public final Material displayMaterial;
+    public static final BrickballColor BLACK = new BrickballColor(Color.BLACK, NamedTextColor.BLACK, BlockTypes.BLACK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLACK_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.BLACK_CONCRETE);
+    public static final BrickballColor BLUE = new BrickballColor(Color.BLUE, NamedTextColor.BLUE, BlockTypes.BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.BLUE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.BLUE_CONCRETE);
+    public static final BrickballColor CYAN = new BrickballColor(Color.TEAL, NamedTextColor.DARK_AQUA, BlockTypes.CYAN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.CYAN_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.CYAN_CONCRETE);
+    public static final BrickballColor GRAY = new BrickballColor(Color.GRAY, NamedTextColor.DARK_GRAY, BlockTypes.GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GRAY_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.GRAY_CONCRETE);
+    public static final BrickballColor GREEN = new BrickballColor(Color.GREEN, NamedTextColor.DARK_GREEN, BlockTypes.GREEN_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.GREEN_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.GREEN_CONCRETE);
+    public static final BrickballColor LIGHT_BLUE = new BrickballColor(Color.AQUA, NamedTextColor.AQUA, BlockTypes.LIGHT_BLUE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_BLUE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.LIGHT_BLUE_CONCRETE);
+    public static final BrickballColor LIGHT_GRAY = new BrickballColor(Color.SILVER, NamedTextColor.GRAY, BlockTypes.LIGHT_GRAY_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIGHT_GRAY_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.LIGHT_GRAY_CONCRETE);
+    public static final BrickballColor LIME = new BrickballColor(Color.LIME, NamedTextColor.GREEN, BlockTypes.LIME_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.LIME_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.LIME_CONCRETE);
+    public static final BrickballColor MAGENTA = new BrickballColor(Color.FUCHSIA, NamedTextColor.LIGHT_PURPLE, BlockTypes.MAGENTA_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.MAGENTA_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.MAGENTA_CONCRETE);
+    public static final BrickballColor ORANGE = new BrickballColor(Color.ORANGE, NamedTextColor.GOLD, BlockTypes.ORANGE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.ORANGE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.ORANGE_CONCRETE);
     // WHY THE FUCK IS THIS NOT A NAMED COLOR
-    public static final BrickballColor PINK = new BrickballColor(Color.fromRGB(0xB6687F), NamedTextColor.LIGHT_PURPLE, BlockTypes.PINK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PINK_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor PURPLE = new BrickballColor(Color.PURPLE, NamedTextColor.DARK_PURPLE, BlockTypes.PURPLE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PURPLE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor RED = new BrickballColor(Color.RED, NamedTextColor.RED, BlockTypes.RED_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.RED_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor WHITE = new BrickballColor(Color.WHITE, NamedTextColor.WHITE, BlockTypes.WHITE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.WHITE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
-    public static final BrickballColor YELLOW = new BrickballColor(Color.YELLOW, NamedTextColor.YELLOW, BlockTypes.YELLOW_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.YELLOW_STAINED_GLASS_PANE.getDefaultState().toBaseBlock());
+    public static final BrickballColor PINK = new BrickballColor(Color.fromRGB(0xB6687F), NamedTextColor.LIGHT_PURPLE, BlockTypes.PINK_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PINK_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.PINK_CONCRETE);
+    public static final BrickballColor PURPLE = new BrickballColor(Color.PURPLE, NamedTextColor.DARK_PURPLE, BlockTypes.PURPLE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.PURPLE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.PURPLE_CONCRETE);
+    public static final BrickballColor RED = new BrickballColor(Color.RED, NamedTextColor.RED, BlockTypes.RED_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.RED_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.RED_CONCRETE);
+    public static final BrickballColor WHITE = new BrickballColor(Color.WHITE, NamedTextColor.WHITE, BlockTypes.WHITE_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.WHITE_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.WHITE_CONCRETE);
+    public static final BrickballColor YELLOW = new BrickballColor(Color.YELLOW, NamedTextColor.YELLOW, BlockTypes.YELLOW_STAINED_GLASS.getDefaultState().toBaseBlock(), BlockTypes.YELLOW_STAINED_GLASS_PANE.getDefaultState().toBaseBlock(), Material.YELLOW_CONCRETE);
+    private static final BrickballColor[] values = { BLACK, BLUE, CYAN, GRAY, GREEN, LIGHT_BLUE, LIGHT_GRAY, LIME, MAGENTA, ORANGE, PINK, PURPLE, RED, WHITE, YELLOW };
 
-    private BrickballColor(Color a, NamedTextColor b, BaseBlock c, BaseBlock d) {bukkitColor = a; textColor = b; glassType = c; paneType = d;}
+    private BrickballColor(Color a, NamedTextColor b, BaseBlock c, BaseBlock d, Material e) {bukkitColor = a; textColor = b; glassType = c; paneType = d; displayMaterial = e;}
 
     public static @Nullable BrickballColor getNamedColor(String alias) {
         if (alias.equalsIgnoreCase("black")) return BLACK;
@@ -47,5 +50,9 @@ public class BrickballColor  {
         if (alias.equalsIgnoreCase("white")) return WHITE;
         if (alias.equalsIgnoreCase("yellow")) return YELLOW;
         return null;
+    }
+
+    public static BrickballColor[] values() {
+        return values;
     }
 }

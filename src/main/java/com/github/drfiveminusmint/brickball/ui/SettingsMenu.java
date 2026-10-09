@@ -4,6 +4,7 @@ import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
+import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import com.github.drfiveminusmint.fiveUI.FiveUI;
 import com.github.drfiveminusmint.fiveUI.container.Page;
 import com.github.drfiveminusmint.fiveUI.container.TextInput;
@@ -21,6 +22,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
 
 public class SettingsMenu {
     private final Lobby lobby;
@@ -78,6 +81,25 @@ public class SettingsMenu {
                         .itemStack(),
                 mapSelectionPage
         ));
+
+        // add selector buttons for team colors
+        for (int team = 0; team < 2; team++) {
+            final ItemStack[] itemStacks = new ItemStack[BrickballColor.values().length];
+            // starting state for the button, should correspond to the current team color
+            int state = 0;
+            for (int i = 0; i < itemStacks.length; i++ ) {
+                itemStacks[i] = new ItemStackBuilder(BrickballColor.values()[i].displayMaterial, 1)
+                        .name(Component.text(String.format("Team %d Color", team+1)).decoration(TextDecoration.ITALIC, false))
+                        .itemStack();
+                if (lobby.getTeamColor(team) == BrickballColor.values()[i])
+                    state = i;
+            }
+            SelectorButton button = new SelectorButton(itemStacks);
+            int finalTeam = team;
+            button.setOnEntry(((player, o) -> lobby.setTeamColor(BrickballColor.values()[(int) o], finalTeam)));
+            button.setState(state);
+            mainPage.setElement(17+9*team, button);
+        }
     }
 
     public void destroy() {
@@ -125,7 +147,7 @@ public class SettingsMenu {
             });
             numberInput.setElement(0, new StaticDisplay(
                     new ItemStackBuilder(material, 1)
-                    .name(Component.text("0"))
+                    .name(Component.text(String.valueOf(lobby.getMatchSetting(key))))
                     .itemStack()));
             // set the match setting to the number the user entered
             // fractional values are supported in the input but are floored
@@ -143,5 +165,9 @@ public class SettingsMenu {
             numberInput.display(player);
         }));
         return result;
+    }
+
+    private SelectorButton teamColorButton(int teamID) {
+
     }
 }

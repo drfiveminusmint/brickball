@@ -317,6 +317,10 @@ public class Lobby implements ForwardingAudience {
         return true;
     }
 
+    public BrickballColor getTeamColor(int teamID) {
+        return teamColors[teamID];
+    }
+
     public void setHost(@Nullable Player newHost) { host = newHost;}
     public Player getHost() { return host;}
     public BrickballFormat getFormat() { return format; }
