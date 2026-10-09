@@ -8,7 +8,12 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +35,6 @@ public class TemplateManager {
     }
 
     public List<String> listTemplateIDs() {
-        // I cannot fucking believe there is not a better way to do this
         List<String> result = new ArrayList<>();
         for (Map.Entry<String, ArenaTemplate> entry : templates.entrySet())
             result.add(entry.getKey());
@@ -61,7 +65,8 @@ public class TemplateManager {
                     Double.parseDouble(locationRaw[2]));
             return registerTemplate(ArenaTemplate.createByID(target.getName().replaceAll(".bbmap", ""),brickSpawn, new BukkitWorld(world), false));
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Brickball.getInstance().getLogger().log(Level.SEVERE,
+                    String.format("Error loading Brickball map %s: Badly defined brick spawn location (should be three comma separated doubles)",target.getName()));
             return false;
         }
     }
