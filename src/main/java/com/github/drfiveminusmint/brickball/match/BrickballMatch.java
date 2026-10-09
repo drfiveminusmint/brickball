@@ -139,7 +139,8 @@ public class BrickballMatch implements ForwardingAudience {
             Player player = Bukkit.getServer().getPlayer(string);
             if (player == null) continue;
             player.teleport(arena.getBrickSpawn());
-            player.setGameMode(GameMode.SPECTATOR);
+            // ensure proper order of operations
+            Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> player.setGameMode(GameMode.SPECTATOR), 1);
         }
         state = MatchState.RUNNING;
         startRound();
@@ -203,7 +204,7 @@ public class BrickballMatch implements ForwardingAudience {
                 }
                 player.setRespawnLocation(player.getLocation(), true);
                 // make CERTAIN that the players are all set to adventure mode
-                player.setGameMode(GameMode.ADVENTURE);
+                Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> player.setGameMode(GameMode.ADVENTURE), 1);
             }
         removeGroundEntities();
         spawnBrick();
@@ -279,7 +280,8 @@ public class BrickballMatch implements ForwardingAudience {
         // If it's already in progress, they need to be put into spectator mode.
         if (state == MatchState.RUNNING) {
             player.teleport(arena.getBrickSpawn());
-            player.setGameMode(GameMode.SPECTATOR);
+            // ensure correct order of operations
+            Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> player.setGameMode(GameMode.SPECTATOR), 1);
             if (settings.getInt(MatchSettings.Setting.TIMER) != -1)
                 timerBar.addPlayer(player);
             if (settings.getInt(MatchSettings.Setting.SHOT_CLOCK) != -1)
@@ -473,7 +475,7 @@ public class BrickballMatch implements ForwardingAudience {
         player.setUnsaturatedRegenRate(80);
         player.setSaturatedRegenRate(10);
         player.setGameMode(GameMode.SURVIVAL);
-        player.setRespawnLocation(player.getWorld().getSpawnLocation(), true);
+        player.setRespawnLocation(Brickball.getInstance().getLobbyWorld().getSpawnLocation(), true);
         timerBar.removePlayer(player);
         shotClockBar.removePlayer(player);
         if (player.getRespawnLocation() != null)

@@ -91,4 +91,6 @@ public class TemplateManager {
         Brickball.getInstance().getScheduler().submitTask(new DeleteTemplateFilesTask(template));
         return true;
     }
+
+    public void clearTemplates() {templates.clear();}
 }

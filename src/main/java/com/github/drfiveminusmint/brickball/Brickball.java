@@ -51,9 +51,9 @@ public final class Brickball extends JavaPlugin {
     private final HashMap<BrickballFormat, FormatStats> perFormatStats = new HashMap<>();
     private final HashMap<BrickballFormat, Matchmaker> matchmakers = new HashMap<>();
     private final HashMap<BrickballFormat, Leaderboard> leaderboards = new HashMap<>();
-    private World matchWorld;
+    private World matchWorld, lobbyWorld;
     private BrickballScheduler scheduler;
-    private Page mainUI;
+    private Page mainUI, matchmakingUI, leaderboardUI;
     private boolean doBackgroundArenaGeneration = false;
 
     public static Brickball getInstance() {
@@ -94,62 +94,25 @@ public final class Brickball extends JavaPlugin {
         // Load default match settings
         MatchSettings.loadDefault(getConfig().getConfigurationSection("defaultSettings"));
         // Get the maps
-        for (File f : Objects.requireNonNull(templatesFolder.listFiles(pathname -> {
-            try {
-                if (pathname.getName().contains(".bbmap"))
-                    return true;
-            } catch (Exception ex) {
-                return false;
-            }
-            return false;
-        }))) {
-            if (this.templateManager.loadTemplateFromFile(f))
-                getLogger().log(Level.INFO, "[Debug] Loaded map " + f.getName());
-            else
-                getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
-        }
-        int numMatchmakers = 0;
+        loadTemplates();
+
         // Load formats and stats
-        for (File file : formatsFolder.listFiles()) {
-            if (file.isDirectory()) continue;
-            YamlConfiguration formatConfig = new YamlConfiguration();
-            try {
-                formatConfig.load(file);
-                BrickballFormat format = new BrickballFormat(formatConfig);
-                formats.add(format);
-                FormatStats formatStats = new FormatStats(format);
-                perFormatStats.put(format, formatStats);
-                // load stats from the CSV
-                File statsFile = new File(statsFolder, format.getName() + ".csv");
-                if (!statsFile.exists()) statsFile.createNewFile();
-                scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats, format));
-                // create matchmakers if necessary
-                if (format.getDoMatchmaking()) {
-                    Matchmaker matchmaker = new Matchmaker(format);
-                    // stagger our matchmakers running
-                    matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
-                    matchmakers.put(format, matchmaker);
-                }
-                // Create leaderboards for rated modes
-                if (format.getIsRated()) {
-                    Leaderboard board = new Leaderboard(format);
-                    leaderboards.put(format, board);
-                }
-                getLogger().log(Level.INFO, "Loaded format " + format.getName());
-            } catch (Exception e) {
-                getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
-                e.printStackTrace();
-            }
-        }
+        loadFormats();
+
+        // Setup match and lobby worlds
         matchWorld = Bukkit.getWorld(getConfig().getString("world", "brickball"));
         if (matchWorld == null)
         {
             getLogger().log(Level.WARNING, "No default world for Brickball found! Define one with /brickball setworld");
         }
+        lobbyWorld = Bukkit.getWorld(getConfig().getString("lobbyWorld", "world"));
+
+        // Register commands and events
         getCommand("brickball").setExecutor(new BrickballCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new MatchEndListener(), this);
 
+        // Setup background generation
         for (Object o : getConfig().getList("backgroundGenerateMaps", new ArrayList<>())) {
             if (o instanceof String s && templateManager.findTemplate(s) != null)
                 backroundGenerateMaps.add(templateManager.findTemplate(s));
@@ -163,8 +126,8 @@ public final class Brickball extends JavaPlugin {
 
         // Create UI Pages
         mainUI = new Page(Component.text("Brickball", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
-        Page matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
-        Page leaderboardUI = new Page(Component.text("Leaderboards", NamedTextColor.GOLD, TextDecoration.BOLD), InventoryType.CHEST);
+        matchmakingUI = new Page(Component.text("Find Match", NamedTextColor.DARK_RED, TextDecoration.BOLD), InventoryType.CHEST);
+        leaderboardUI = new Page(Component.text("Leaderboards", NamedTextColor.GOLD, TextDecoration.BOLD), InventoryType.CHEST);
 
         // Build main UI page
         mainUI.setElement(10, new LinkButton(
@@ -184,34 +147,14 @@ public final class Brickball extends JavaPlugin {
         mainUI.setElement(16, createCustomButton);
 
         // Build matchmaking UI page
-        int i = 0;
-        for (BrickballFormat format : matchmakers.keySet()) {
-            StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
-            button.setOnClick(((player, clickableElement, clickType) -> {
-                startPlayerQueue(player, format);
-                player.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
-            }));
-            matchmakingUI.setElement(i++, button);
-            if (i >= matchmakingUI.getInventory().getSize())
-                break;
-        }
+        createMatchmakingUI();
         matchmakingUI.setOnClose(((player, container, reason) ->  {
             if (reason != InventoryCloseEvent.Reason.PLUGIN)
                 Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1);
         }));
 
         // Build leaderboards page
-        i = 0;
-        for (BrickballFormat format : leaderboards.keySet()) {
-            leaderboardUI.setElement(i++, new LinkButton(format.getUnselectedDisplayItem(), leaderboards.get(format).getDisplayPage()));
-            // Link the leaderboard page back to the main leaderboards UI page
-            leaderboards.get(format).getDisplayPage().setOnClose(((player, container, reason) -> {
-                if (reason != InventoryCloseEvent.Reason.PLUGIN)
-                    Bukkit.getScheduler().runTaskLater(this, () -> leaderboardUI.display(player), 1);
-            }));
-            if (i >= leaderboardUI.getInventory().getSize())
-                break;
-        }
+        createLeaderboardsUI();
         leaderboardUI.setOnClose(((player, container, reason) ->  {
             if (reason != InventoryCloseEvent.Reason.PLUGIN)
                 Bukkit.getScheduler().runTaskLater(this, () -> mainUI.display(player), 1);
@@ -220,6 +163,9 @@ public final class Brickball extends JavaPlugin {
     }
 
     public World getMatchWorld() {return matchWorld;}
+
+    public World getLobbyWorld() {return lobbyWorld;}
+
     public void setMatchWorld(World world) {matchWorld = world;}
     public ArrayList<BrickballFormat> getFormats() { return formats; }
     public FormatStats getFormatStats(BrickballFormat format) {return perFormatStats.get(format);}
@@ -266,5 +212,114 @@ public final class Brickball extends JavaPlugin {
         scheduler.shutdown();
         for (Matchmaker matchmaker : matchmakers.values())
             matchmaker.cancel();
+    }
+
+    public void reloadTemplates() {
+        templateManager.clearTemplates();
+        loadTemplates();
+    }
+
+    public void reloadFormats() {
+        // shutdown everything
+        matchManager.stopAllMatches();
+        lobbyList.shutdownAll();
+        for (Matchmaker matchmaker : matchmakers.values())
+            matchmaker.cancel();
+        for (Leaderboard leaderboard : leaderboards.values())
+            FiveUI.getInstance().getUIManager().unregisterInterface(leaderboard.getDisplayPage());
+        leaderboards.clear();
+        matchmakers.clear();
+        formats.clear();
+
+        // reload
+        loadFormats();
+        createLeaderboardsUI();
+        createMatchmakingUI();
+    }
+
+    private void loadTemplates() {
+        for (File f : Objects.requireNonNull(templatesFolder.listFiles(pathname -> {
+            try {
+                if (pathname.getName().contains(".bbmap"))
+                    return true;
+            } catch (Exception ex) {
+                return false;
+            }
+            return false;
+        }))) {
+            if (this.templateManager.loadTemplateFromFile(f))
+                getLogger().log(Level.INFO, "[Debug] Loaded map " + f.getName());
+            else
+                getLogger().log(Level.INFO, "[Debug] Couldn't load map " + f.getName());
+        }
+    }
+
+    private void loadFormats() {
+        File formatsFolder = new File(getDataFolder(), "formats");
+        int numMatchmakers = 0;
+        for (File file : formatsFolder.listFiles()) {
+            if (file.isDirectory()) continue;
+            YamlConfiguration formatConfig = new YamlConfiguration();
+            try {
+                formatConfig.load(file);
+                BrickballFormat format = new BrickballFormat(formatConfig);
+                formats.add(format);
+                FormatStats formatStats = new FormatStats(format);
+                perFormatStats.put(format, formatStats);
+                // load stats from the CSV
+                File statsFile = new File(statsFolder, format.getName() + ".csv");
+                if (!statsFile.exists()) statsFile.createNewFile();
+                scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats, format));
+                // create matchmakers if necessary
+                if (format.getDoMatchmaking()) {
+                    Matchmaker matchmaker = new Matchmaker(format);
+                    // stagger our matchmakers running
+                    matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
+                    matchmakers.put(format, matchmaker);
+                }
+                // Create leaderboards for rated modes
+                if (format.getIsRated()) {
+                    Leaderboard board = new Leaderboard(format);
+                    leaderboards.put(format, board);
+                }
+                getLogger().log(Level.INFO, "Loaded format " + format.getName());
+            } catch (Exception e) {
+                getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void createMatchmakingUI() {
+        // clear any pre-existing elements
+        matchmakingUI.fillElement(null);
+        // create a button for each matchmade format
+        int i = 0;
+        for (BrickballFormat format : matchmakers.keySet()) {
+            StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
+            button.setOnClick(((player, clickableElement, clickType) -> {
+                startPlayerQueue(player, format);
+                player.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+            }));
+            matchmakingUI.setElement(i++, button);
+            if (i >= matchmakingUI.getInventory().getSize())
+                break;
+        }
+    }
+
+    private void createLeaderboardsUI() {
+        // clear any pre-existing elements
+        leaderboardUI.fillElement(null);
+        int i = 0;
+        for (BrickballFormat format : leaderboards.keySet()) {
+            leaderboardUI.setElement(i++, new LinkButton(format.getUnselectedDisplayItem(), leaderboards.get(format).getDisplayPage()));
+            // Link the leaderboard page back to the main leaderboards UI page
+            leaderboards.get(format).getDisplayPage().setOnClose(((player, container, reason) -> {
+                if (reason != InventoryCloseEvent.Reason.PLUGIN)
+                    Bukkit.getScheduler().runTaskLater(this, () -> leaderboardUI.display(player), 1);
+            }));
+            if (i >= leaderboardUI.getInventory().getSize())
+                break;
+        }
     }
 }

@@ -5,7 +5,6 @@ import com.github.drfiveminusmint.brickball.arena.ArenaTemplate;
 import com.github.drfiveminusmint.brickball.arena.TemplateManager;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.Lobby;
-import com.github.drfiveminusmint.brickball.lobby.LobbyList;
 import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.match.MatchState;
@@ -244,6 +243,31 @@ public class BrickballCommand implements TabExecutor {
         if (args[1].equalsIgnoreCase("shutdown")) {
             Brickball.getInstance().getMatchManager().stopAllMatches();
             Brickball.getInstance().getLobbyList().shutdownAll();
+        }
+        if (args[1].equalsIgnoreCase("reload")) {
+            if (args.length < 3 || (args[2].contains("f") && (args[2].contains("t") || args[2].contains("m")))) {
+                player.sendMessage(Component.text("Reloading all ", NamedTextColor.GOLD)
+                        .append(Component.text("templates", NamedTextColor.YELLOW))
+                        .append(Component.text(" and ", NamedTextColor.GOLD))
+                        .append(Component.text("formats", NamedTextColor.YELLOW))
+                );
+                Brickball.getInstance().reloadTemplates();
+                Brickball.getInstance().reloadFormats();
+            } else if (args[2].contains("f")) {
+                player.sendMessage(Component.text("Reloading all ", NamedTextColor.GOLD)
+                        .append(Component.text("formats", NamedTextColor.YELLOW))
+                );
+                Brickball.getInstance().reloadFormats();
+            } else if (args[2].contains("t") || args[2].contains("m")) {
+                player.sendMessage(Component.text("Reloading all ", NamedTextColor.GOLD)
+                        .append(Component.text("templates", NamedTextColor.YELLOW))
+                );
+                Brickball.getInstance().reloadTemplates();
+            } else {
+                player.sendMessage(Component.text("Cannot parse argument: ", NamedTextColor.RED)
+                        .append(Component.text(args[2], NamedTextColor.YELLOW))
+                );
+            }
         }
         return true;
     }

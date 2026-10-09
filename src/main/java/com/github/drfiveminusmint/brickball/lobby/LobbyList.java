@@ -2,12 +2,14 @@ package com.github.drfiveminusmint.brickball.lobby;
 
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
-public class LobbyList {
+public class LobbyList implements Iterable<Lobby> {
     private final HashSet<Lobby> lobbies = new HashSet<>();
     private final HashMap<Player, Lobby> playerMap = new HashMap<>();
 
@@ -39,5 +41,11 @@ public class LobbyList {
     public void shutdownAll() {
         for (Lobby lobby : lobbies)
             lobby.shutdown();
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Lobby> iterator() {
+        return lobbies.iterator();
     }
 }
