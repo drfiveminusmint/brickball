@@ -7,10 +7,10 @@ import com.github.drfiveminusmint.brickball.events.listener.MatchEndListener;
 import com.github.drfiveminusmint.brickball.events.listener.PlayerListener;
 import com.github.drfiveminusmint.brickball.lobby.BrickballFormat;
 import com.github.drfiveminusmint.brickball.lobby.LobbyList;
-import com.github.drfiveminusmint.brickball.match.BrickballMatch;
 import com.github.drfiveminusmint.brickball.match.MatchManager;
 import com.github.drfiveminusmint.brickball.match.MatchSettings;
 import com.github.drfiveminusmint.brickball.scheduling.BrickballScheduler;
+import com.github.drfiveminusmint.brickball.scheduling.CreateMatchTask;
 import com.github.drfiveminusmint.brickball.scheduling.LoadStatsTask;
 import com.github.drfiveminusmint.brickball.scheduling.matchmaking.Matchmaker;
 import com.github.drfiveminusmint.brickball.stats.FormatStats;
@@ -157,8 +157,7 @@ public final class Brickball extends JavaPlugin {
         doBackgroundArenaGeneration = !backroundGenerateMaps.isEmpty();
         if (doBackgroundArenaGeneration) {
             for (ArenaTemplate template : backroundGenerateMaps) {
-                BrickballMatch match = matchManager.createMatch(template, -1);
-                matchManager.freezeMatch(match);
+                scheduler.submitTask(new CreateMatchTask(template.getID(), 0));
             }
         }
 

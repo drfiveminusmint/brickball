@@ -36,9 +36,7 @@ public class ArenaRestockingTask implements PriorityTask {
         for (String s : templateCounts.keySet()) {
             if (templateCounts.get(s).value() == 0)
             {
-                BrickballMatch match = Brickball.getInstance().getMatchManager().createMatch(Brickball.getInstance().getTemplateManager().findTemplate(s), -5);
-                if (match != null)
-                    Brickball.getInstance().getMatchManager().freezeMatch(match);
+                Brickball.getInstance().getScheduler().submitTask(new CreateMatchTask(s, -5));
             }
         }
     }
