@@ -3,13 +3,7 @@ package com.github.drfiveminusmint.brickball.arena;
 import com.github.drfiveminusmint.brickball.Brickball;
 import com.github.drfiveminusmint.brickball.scheduling.CopyRegionTask;
 import com.github.drfiveminusmint.brickball.util.WGUtils;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
-import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.WorldGuard;
@@ -19,9 +13,7 @@ import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
 import org.bukkit.Location;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 
 public class ArenaTemplate {
