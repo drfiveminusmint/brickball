@@ -11,6 +11,8 @@ import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.util.SideEffect;
+import com.sk89q.worldedit.util.SideEffectSet;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldguard.WorldGuard;
@@ -91,24 +93,26 @@ public class BrickballArena {
     // Utility function to open the doors at the start of the round
     public void openDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
+            openSession.setSideEffectApplier(SideEffectSet.none());
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
                     BlockTypes.AIR.getDefaultState().toBaseBlock());
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorB),
                     BlockTypes.AIR.getDefaultState().toBaseBlock());
         } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem opening the doors for an arena (is it up to date?)");
         }
     }
 
     // Utility function to close the doors at the start of the round
     public void closeDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
+            openSession.setSideEffectApplier(SideEffectSet.none().with(SideEffect.NEIGHBORS, SideEffect.State.ON));
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
                     teamColors[0].paneType);
             openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorB),
                     teamColors[1].paneType);
         } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem closing the doors for an arena (is it up to date?)");
         }
         // re-dye doors to fix connection issues
         // disgusting hack, replace this ASAP
@@ -153,10 +157,11 @@ public class BrickballArena {
             lowCorner = doorB.getMinimumPoint().add(-1,-1,-1);
             highCorner = doorB.getMaximumPoint().add(1,1,1);
         }
-        try (EditSession dyeSession = WorldEdit.getInstance().newEditSession(gameWorld)){
+        try (EditSession dyeSession = WorldEdit.getInstance().newEditSession(gameWorld);){
+            dyeSession.setSideEffectApplier(SideEffectSet.none().with(SideEffect.NEIGHBORS, SideEffect.State.ON));
             dyeSession.replaceBlocks(new CuboidRegion(lowCorner,highCorner), WGUtils.GLASS_ALL, teamColor.glassType);
         } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "RUH ROH RHAGGY");
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem setting the team colors for an arena (is it up to date?)");
         }
     }
     public String getTemplateID() {return templateID;}

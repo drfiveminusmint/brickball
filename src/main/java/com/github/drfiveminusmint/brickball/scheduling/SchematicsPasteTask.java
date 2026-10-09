@@ -8,6 +8,8 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import com.sk89q.worldedit.util.SideEffect;
+import com.sk89q.worldedit.util.SideEffectSet;
 import com.sk89q.worldedit.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +42,7 @@ public class SchematicsPasteTask implements SyncTask {
         int index = schematics.size() - count--;
         ClipboardHolder clipboardHolder = schematics.get(index);
         try (EditSession editSession = WorldEdit.getInstance().newEditSession(world)){
+            editSession.setSideEffectApplier(SideEffectSet.none().with(SideEffect.LIGHTING, SideEffect.State.DELAYED));
             Operation operation = clipboardHolder
                     .createPaste(editSession)
                     .to(offsets.get(index))
