@@ -49,12 +49,12 @@ public class LobbyCreationMenu {
         // Privacy button
         SelectorButton privateButton = new SelectorButton(new org.bukkit.inventory.ItemStack[] {
                 new ItemStackBuilder(Material.ENDER_EYE, 1)
-                        .name(Component.text("Public Lobby", NamedTextColor.YELLOW, TextDecoration.BOLD))
-                        .addLore(Component.text("Other players will be able to see and join this lobby."))
+                        .name(Component.text("Public Lobby", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
+                        .addLore(Component.text("Other players will be able to see and join this lobby.", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
                         .itemStack(),
                 new ItemStackBuilder(Material.ENDER_PEARL, 1)
-                        .name(Component.text("Private Lobby", NamedTextColor.YELLOW, TextDecoration.BOLD))
-                        .addLore(Component.text("Other players will not be able to join this lobby. Use /brickball invite."))
+                        .name(Component.text("Private Lobby", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
+                        .addLore(Component.text("Other players will not be able to join this lobby. Use /brickball invite.", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
                         .itemStack()
         });
         privateButton.setOnEntry(((player, o) -> isPrivate = ((Integer) o) == 1));
@@ -62,7 +62,7 @@ public class LobbyCreationMenu {
 
         // Creation button
         StaticButton createButton = new StaticButton(new ItemStackBuilder(Material.GREEN_CONCRETE, 1)
-                .name(Component.text("Create Match!", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .name(Component.text("Create Match!", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
                 .itemStack());
         createButton.setOnClick(((player, clickableElement, clickType) -> {
             if (format == null)

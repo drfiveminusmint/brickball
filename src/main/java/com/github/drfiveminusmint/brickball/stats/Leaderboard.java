@@ -40,8 +40,8 @@ public class Leaderboard {
                 headMeta.displayName(Component.text(
                         String.format("#%d: %s (%d)", index+1, top[index].getName(),
                                 Brickball.getInstance().getFormatStats(format).getPlayerStat(top[index], FormatStats.TrackedStat.RATING)),
-                        NamedTextColor.YELLOW, TextDecoration.BOLD));
-                headMeta.lore(List.of(Component.text("Click to see full stats")));
+                        NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                headMeta.lore(List.of(Component.text("Click to see full stats", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false)));
                 head.setItemMeta(headMeta);
                 return head;
             });

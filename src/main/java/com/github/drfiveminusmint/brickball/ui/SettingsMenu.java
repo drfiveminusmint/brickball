@@ -52,10 +52,10 @@ public class SettingsMenu {
             // possible TODO: map-specific button icons?
             RadioButton button = new RadioButton(
                     new ItemStackBuilder(Material.NETHER_BRICK, 1)
-                            .name(Component.text(map.getID(), NamedTextColor.GRAY))
+                            .name(Component.text(map.getID(), NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
                             .itemStack(),
                     new ItemStackBuilder(Material.BRICK, 1)
-                            .name(Component.text(map.getID(), NamedTextColor.YELLOW, TextDecoration.BOLD))
+                            .name(Component.text(map.getID(), NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
                             .itemStack()
             );
             // Link all maps after the first with the first button
@@ -77,7 +77,7 @@ public class SettingsMenu {
         // Link main page to map selection page
         mainPage.setElement(8, new LinkButton(
                 new ItemStackBuilder(Material.GRASS_BLOCK, 1)
-                        .name(Component.text("Select next map...", NamedTextColor.AQUA, TextDecoration.ITALIC))
+                        .name(Component.text("Select next map...", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
                         .itemStack(),
                 mapSelectionPage
         ));
@@ -89,7 +89,7 @@ public class SettingsMenu {
             int state = 0;
             for (int i = 0; i < itemStacks.length; i++ ) {
                 itemStacks[i] = new ItemStackBuilder(BrickballColor.values()[i].displayMaterial, 1)
-                        .name(Component.text(String.format("Team %d Color", team+1)).decoration(TextDecoration.ITALIC, false))
+                        .name(Component.text(String.format("Team %d Color", team+1), BrickballColor.values()[i].textColor).decoration(TextDecoration.ITALIC, false))
                         .itemStack();
                 if (lobby.getTeamColor(team) == BrickballColor.values()[i])
                     state = i;
@@ -113,12 +113,12 @@ public class SettingsMenu {
     private SelectorButton createToggleButton(NamespacedKey key, String humanName, Material trueMaterial, Material falseMaterial) {
         SelectorButton result = new SelectorButton(new ItemStack[] {
                 new ItemStackBuilder(falseMaterial, 1)
-                        .name(Component.text(humanName, NamedTextColor.GRAY))
-                        .addLore(Component.text("Disabled"))
+                        .name(Component.text(humanName, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
+                        .addLore(Component.text("Disabled").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false))
                         .itemStack(),
                 new ItemStackBuilder(trueMaterial, 1)
-                        .name(Component.text(humanName, NamedTextColor.AQUA, TextDecoration.BOLD))
-                        .addLore(Component.text("Enabled"))
+                        .name(Component.text(humanName, NamedTextColor.AQUA, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
+                        .addLore(Component.text("Enabled").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false))
                         .itemStack()
         });
         if ((Boolean) lobby.getMatchSetting(key))
@@ -133,8 +133,8 @@ public class SettingsMenu {
             if (displayQuantity < 1 || displayQuantity > 64)
                 displayQuantity = 1;
             return new ItemStackBuilder(material, displayQuantity)
-                    .name(Component.text(humanName, NamedTextColor.YELLOW))
-                    .addLore(Component.text("Click to edit"))
+                    .name(Component.text(humanName, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
+                    .addLore(Component.text("Click to edit...").color(NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
                     .itemStack();
         });
         result.setOnClick(((player, clickableElement, clickType) -> {

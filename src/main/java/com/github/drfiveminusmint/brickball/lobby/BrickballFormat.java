@@ -53,11 +53,10 @@ public class BrickballFormat {
             builder = new ItemStackBuilder(Material.BRICK, 1);
         } else {
             builder = new ItemStackBuilder(Material.valueOf(itemSection.getString("type", "BRICK")), itemSection.getInt("quantity", 1))
-                    .name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA)))
-                    .addLore(Component.text(itemSection.getString("lore", "")));
+                    .addLore(Component.text(itemSection.getString("lore", "")).decoration(TextDecoration.ITALIC, false));
         }
-        this.inactiveDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA))).itemStack();
-        this.activeDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA), TextDecoration.BOLD))
+        this.inactiveDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC, false)).itemStack();
+        this.activeDisplayItem = builder.name(Component.text(name, (this.isRated ? NamedTextColor.RED : NamedTextColor.AQUA), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
                 .setGlimmer(true).itemStack();
     }
 

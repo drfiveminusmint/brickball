@@ -169,16 +169,16 @@ public final class Brickball extends JavaPlugin {
         // Build main UI page
         mainUI.setElement(10, new LinkButton(
                 new ItemStackBuilder(Material.BRICK, 1)
-                .name(Component.text("Find Match", NamedTextColor.YELLOW))
+                .name(Component.text("Find Match", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
                 .itemStack(),
                 matchmakingUI));
         mainUI.setElement(13, new LinkButton(
                 new ItemStackBuilder(Material.NETHER_STAR, 1)
-                        .name(Component.text("Leaderboards", NamedTextColor.YELLOW))
+                        .name(Component.text("Leaderboards", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
                         .itemStack(),
                 leaderboardUI));
         StaticButton createCustomButton = new StaticButton(new ItemStackBuilder(Material.ANVIL, 1)
-                .name(Component.text("Create Custom Match", NamedTextColor.YELLOW))
+                .name(Component.text("Create Custom Match", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
                 .itemStack());
         createCustomButton.setOnClick(((player, clickableElement, clickType) -> new LobbyCreationMenu(player)));
         mainUI.setElement(16, createCustomButton);
