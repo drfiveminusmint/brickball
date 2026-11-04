@@ -228,7 +228,15 @@ public class Lobby implements ForwardingAudience {
         // sever match link
         activeMatch.setReturningLobby(null);
         activeMatch = null;
-        updateScoreboard();
+        // boot players back to queue if this format is matchmade
+        if (format.getDoMatchmaking()) {
+            final Set<Player> cachedPlayers = new HashSet<>(readyPlayers.keySet());
+            Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> {
+               for (Player player : cachedPlayers)
+                   Brickball.getInstance().startPlayerQueue(player, format);
+            });
+            shutdown();
+        } else updateScoreboard();
     }
 
     public boolean shutdown() {
@@ -319,8 +327,8 @@ public class Lobby implements ForwardingAudience {
         return teamColors[teamID];
     }
 
-    public void setHost(@Nullable Player newHost) { host = newHost;}
-    public @Nullable Player getHost() { return host;}
+    public void setHost(@Nullable Player newHost) { host = newHost; }
+    public @Nullable Player getHost() { return host; }
     public BrickballFormat getFormat() { return format; }
     public ArenaTemplate getNextMap() { return nextMap; }
 
