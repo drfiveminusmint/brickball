@@ -160,8 +160,8 @@ public class BrickballMatch implements ForwardingAudience {
                 if (player == null) continue;
                 player.teleport(arena.getSpawnLocation(i));
                 player.closeInventory();
-                // Turn the player to face the brick before we set their respawn location
-                player.lookAt(arena.getBrickSpawn(), LookAnchor.EYES);
+                // Turn the player to face their team's door before we set their respawn location
+                player.lookAt(arena.getLookLocation(i), LookAnchor.EYES);
                 if (settings.getBoolean(MatchSettings.Setting.NATURAL_REGENERATION)) {
                     player.setUnsaturatedRegenRate(80);
                     player.setSaturatedRegenRate(10);

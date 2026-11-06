@@ -32,6 +32,7 @@ public class BrickballArena {
     private final HashSet<ProtectedRegion> deathRegions;
     private final World gameWorld;
     private final Location[] spawnLocations = new Location[2];
+    private final Location[] lookLocations = new Location[2];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
     private final Location brickSpawn;
     private final String templateID;
@@ -48,6 +49,7 @@ public class BrickballArena {
             spawnRegions[i] = WGUtils.cloneRegionBetweenWorlds(template.getSpawn(i), String.format("spawn%c%d", teamLetters[i], matchID), gameWorld, offset);
             spawnLocations[i] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnRegions[i]), gameWorld);
             doors[i] = WGUtils.cloneRegionBetweenWorlds(template.getDoor(i), String.format("door%c%d", teamLetters[i], matchID), gameWorld, offset);
+            lookLocations[i] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(doors[i]).add(0,1,0), gameWorld);
         }
         deathRegions = new HashSet<>();
         for (ProtectedRegion region : template.getDeathRegions())
@@ -155,9 +157,6 @@ public class BrickballArena {
         return masterRegion.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
     }
 
-    public Location getSpawnLocation (int team) {return spawnLocations[team];}
-    public Location getBrickSpawn () {return brickSpawn;}
-
     public void setTeamColor(BrickballColor teamColor, int i) {
 
         teamColors[i] = teamColor;
@@ -171,5 +170,9 @@ public class BrickballArena {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem setting the team colors for an arena (is it up to date?)");
         }
     }
-    public String getTemplateID() {return templateID;}
+
+    public Location getSpawnLocation (int team) { return spawnLocations[team]; }
+    public Location getBrickSpawn () { return brickSpawn; }
+    public Location getLookLocation(int team) { return lookLocations[team]; }
+    public String getTemplateID() { return templateID; }
 }
