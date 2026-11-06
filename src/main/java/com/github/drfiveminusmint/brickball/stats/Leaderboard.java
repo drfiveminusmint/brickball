@@ -26,7 +26,7 @@ public class Leaderboard {
 
     public Leaderboard(BrickballFormat format) {
         brickballFormat = format;
-        displayPage = new Page(Component.text("Leaderboard for " + format.getName(),
+        displayPage = new Page(Component.text(format.getName(),
                 NamedTextColor.GOLD,
                 TextDecoration.BOLD), InventoryType.CHEST);
         for (int i = 0; i < MAX_SIZE; i++) {
