@@ -10,6 +10,7 @@ import com.github.drfiveminusmint.brickball.util.BrickballColor;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -41,6 +42,7 @@ public class Lobby implements ForwardingAudience {
     private final Objective cosmeticObjective;
     private final Team[] lobbyTeams = new Team[3];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE, BrickballColor.LIGHT_GRAY, BrickballColor.LIGHT_GRAY};
+    private final String[] teamNames = {"Team 1", "Team 2", "Spectators"};
     private boolean isPrivate;
     private @Nullable BrickballMatch activeMatch;
     private ArenaTemplate nextMap;
@@ -51,11 +53,6 @@ public class Lobby implements ForwardingAudience {
     public Lobby(BrickballFormat format, boolean isPrivate) {
         savedSettings = MatchSettings.cloneDefault();
         setFormat(format, null);
-        // Debug
-        if (this.format.getIsRated())
-            Brickball.getInstance().getLogger().log(Level.INFO, "Rated Match Created!");
-        else
-            Brickball.getInstance().getLogger().log(Level.INFO, "Unrated Match Created!");
         this.isPrivate = isPrivate;
         Brickball.getInstance().getLobbyList().registerLobby(this);
         // Setup a cosmetic scoreboard
@@ -63,11 +60,11 @@ public class Lobby implements ForwardingAudience {
         cosmeticObjective = lobbyScoreboard.registerNewObjective("lobbyDummy", Criteria.DUMMY, Component.text("Lobby", NamedTextColor.AQUA));
         cosmeticObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
         cosmeticObjective.setAutoUpdateDisplay(true);
-        lobbyTeams[0] = lobbyScoreboard.registerNewTeam("Team 1");
-        lobbyTeams[1] = lobbyScoreboard.registerNewTeam("Team 2");
-        lobbyTeams[2] = lobbyScoreboard.registerNewTeam("Spectators");
         for (int i = 0; i < lobbyTeams.length; i++) {
+            lobbyTeams[i] = lobbyScoreboard.registerNewTeam(teamNames[i]);
             lobbyTeams[i].color(teamColors[i].textColor);
+            lobbyTeams[i].displayName(Component.text(teamNames[i], teamColors[i].textColor));
+            lobbyTeams[i].prefix(Component.text("", teamColors[i].textColor));
             lobbyTeams[i].setAllowFriendlyFire(false);
         }
         cosmeticObjective.getScore("Players").setScore(0);
@@ -124,7 +121,12 @@ public class Lobby implements ForwardingAudience {
         lobbyTeams[teamID].addPlayer(player);
 
         if (teamID < lobbyTeams.length-1)
-            sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(String.format(" joined Team %d.", teamID+1))));
+            sendMessage(Component.text("[Brickball] ")
+                    .append(player.displayName())
+                    .append(Component.text(" joined ", NamedTextColor.WHITE))
+                    .append(lobbyTeams[teamID].displayName())
+                    .append(Component.text(".", NamedTextColor.WHITE))
+            );
         else
             sendMessage(Component.text("[Brickball] ").append(player.displayName()).append(Component.text(" is now spectating")));
         // update the scoreboard and try to start the match
@@ -207,8 +209,11 @@ public class Lobby implements ForwardingAudience {
         if (activeMatch == null) return false;
         // Overwrite settings
         activeMatch.overwriteSettings(savedSettings);
-        activeMatch.setTeamColor(teamColors[0], 0);
-        activeMatch.setTeamColor(teamColors[1], 1);
+        // Setup match teams
+        for (int i = 0; i < 2; i++) {
+            activeMatch.setTeamColor(teamColors[i], i);
+            activeMatch.setTeamName(teamNames[i], i);
+        }
         for(int i = 0; i < 3; i++) {
             for(String entry : lobbyTeams[i].getEntries()) {
                 // These will only ever be players
@@ -318,8 +323,22 @@ public class Lobby implements ForwardingAudience {
         if (teamID < 0 || teamID > 2) return false;
         teamColors[teamID] = color;
         lobbyTeams[teamID].color(color.textColor);
+        lobbyTeams[teamID].prefix(Component.text("", teamColors[teamID].textColor));
         if (activeMatch != null)
             activeMatch.setTeamColor(color, teamID);
+        return true;
+    }
+
+    public boolean setTeamName(String newName, int teamID) {
+        for (Team team : lobbyTeams) {
+            if (!(team.displayName() instanceof TextComponent component)) continue;
+            if (newName.equals(component.content()))
+                return false;
+        }
+        lobbyTeams[teamID].displayName(Component.text(newName, teamColors[teamID].textColor));
+        teamNames[teamID] = newName;
+        if (activeMatch != null)
+            return activeMatch.setTeamName(newName, teamID);
         return true;
     }
 

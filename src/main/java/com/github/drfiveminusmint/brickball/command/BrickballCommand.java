@@ -61,6 +61,7 @@ public class BrickballCommand implements TabExecutor {
         if (args[0].equalsIgnoreCase("stats")) return statsCommand(player, args);
         if (args[0].equalsIgnoreCase("cancel")) return cancelCommand(player, args);
         if (args[0].equalsIgnoreCase("host")) return hostCommand(player, args);
+        if (args[0].equalsIgnoreCase("teamName")) return teamNameCommand(player, args);
         return false;
     }
     private boolean hostCommand(Player player, String[] args) {
@@ -305,6 +306,41 @@ public class BrickballCommand implements TabExecutor {
         // the internal array is zero-indexed but that confuses users, so we have to convert
         // setting the lobby's team colors also propagates these changes down
         lobby.setTeamColor(color, team-1);
+        return true;
+    }
+
+    // Sets the team color of one of the lobby's teams
+    public boolean teamNameCommand (Player player, String[] args) {
+        Lobby lobby = Brickball.getInstance().getLobbyList().getLobbyByPlayer(player);
+        if (lobby == null) {
+            player.sendMessage(Component.text("You're not in a Brickball lobby.", NamedTextColor.RED));
+            return true;
+        }
+        if (!player.equals(lobby.getHost()) && !player.hasPermission("brickball.host.override")) {
+            player.sendMessage(Component.text("You can only change the team names if you're the lobby host.", NamedTextColor.RED));
+            return true;
+        }
+        if (args.length < 3) {
+            player.sendMessage("Usage: /brickball teamname (1/2) (name)");
+            return true;
+        }
+        int team;
+        try {
+            team = Integer.parseInt(args[1]);
+        } catch (NumberFormatException exception) {
+            team = 0;
+        }
+        if (team < 1 || team > 2) {
+            player.sendMessage("Usage: /brickball teamname (1/2) (name)");
+            return true;
+        }
+        // the internal array is zero-indexed but that confuses users, so we have to convert
+        // setting the lobby's team colors also propagates these changes down
+        if (lobby.setTeamName(args[2], team-1))
+            player.sendMessage(Component.text("Team name set to ")
+                    .append(Component.text(args[2], lobby.getTeamColor(team-1).textColor)));
+        else
+            player.sendMessage(Component.text("Teams cannot have duplicate names!", NamedTextColor.RED));
         return true;
     }
 
@@ -625,7 +661,7 @@ public class BrickballCommand implements TabExecutor {
                 result.add(key.getKey());
             return result;
         }
-        if (args.length == 1) return List.of( "admin", "create", "host", "cancel", "join", "jointeam", "leave", "map", "pause", "ready", "settings", "setmap", "setworld", "start", "stats", "teamcolor", "unpause");
+        if (args.length == 1) return List.of( "admin", "create", "host", "cancel", "join", "jointeam", "leave", "map", "pause", "ready", "settings", "setmap", "setworld", "start", "stats", "teamcolor", "teamname", "unpause");
         return null;
     }
 

@@ -4,6 +4,7 @@ public enum MatchState {
     PREPARING,
     LOADING,
     RUNNING,
+    ROUND_STARTING,
     PAUSED,
     FROZEN,
     STOPPING

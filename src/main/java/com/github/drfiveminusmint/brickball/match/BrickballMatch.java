@@ -154,6 +154,7 @@ public class BrickballMatch implements ForwardingAudience {
         arena.closeDoors();
         shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
         shotClockBar.setVisible(false);
+        state = MatchState.ROUND_STARTING;
         for (int i = 0; i <= 1; i++)
             for (String string : teams[i].getEntries()) {
                 Player player = Bukkit.getServer().getPlayer(string);
@@ -212,6 +213,7 @@ public class BrickballMatch implements ForwardingAudience {
             final int j = i;
             new BukkitRunnable () {
                 public void run () {
+                    if (state != MatchState.ROUND_STARTING) return;
                     playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 1F));
                     showTitle(Title.title(Component.text(String.valueOf(j)), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(400),Duration.ofMillis(200))));
                 }
@@ -219,9 +221,11 @@ public class BrickballMatch implements ForwardingAudience {
         }
         new BukkitRunnable () {
             public void run () {
+                if (state != MatchState.ROUND_STARTING) return;
                 playSound(Sound.sound(Key.key("block.note_block.pling"), Sound.Source.BLOCK, 5f, 2F));
                 showTitle(Title.title(Component.text("Round Start!"), Component.text(""), Title.Times.times(Duration.ZERO,Duration.ofMillis(200),Duration.ofMillis(200))));
                 arena.openDoors();
+                state = MatchState.RUNNING;
             }
         }.runTaskLater(Brickball.getInstance(), 160);
     }
@@ -325,8 +329,16 @@ public class BrickballMatch implements ForwardingAudience {
         if (teamID >= teamColors.length)
             return false;
         teams[teamID].color(color.textColor);
+        teams[teamID].prefix(Component.text("", color.textColor));
         teamColors[teamID] = color;
         arena.setTeamColor(color, teamID);
+        return true;
+    }
+
+    public boolean setTeamName(String newName, int teamID) {
+        // actually renaming the team is a pain, so we do this instead
+        teams[teamID].displayName(Component.text(newName, teamColors[teamID].textColor));
+        matchScoreObjective.getScore(teamNames[teamID]).customName(Component.text(newName));
         return true;
     }
 
@@ -554,7 +566,9 @@ public class BrickballMatch implements ForwardingAudience {
             sendMessage(Component.text("[Brickball] The match ended in a tie!").color(NamedTextColor.GOLD));
         else {
             winningTeam = (matchScoreObjective.getScore(teamNames[0]).getScore() > matchScoreObjective.getScore(teamNames[1]).getScore()) ? 0 : 1;
-            sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD).append(Component.text(teamNames[winningTeam]).color(teamColors[winningTeam].textColor)).append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
+            sendMessage(Component.text("[Brickball] ").color(NamedTextColor.GOLD)
+                    .append(teams[winningTeam].displayName())
+                    .append(Component.text(" has won the match!").color(NamedTextColor.GOLD)));
         }
         displayStats(players);
         pause(false);
@@ -619,7 +633,7 @@ public class BrickballMatch implements ForwardingAudience {
     public String getMapID() {return arena.getTemplateID();}
 
     public boolean pause(boolean notify) {
-        if (state != MatchState.RUNNING) return false;
+        if (state != MatchState.RUNNING && state != MatchState.ROUND_STARTING) return false;
         state = MatchState.PAUSED;
         if (notify && returningLobby != null && returningLobby.getHost() != null)
             sendMessage(Component.text("[Brickball] ", NamedTextColor.WHITE)
