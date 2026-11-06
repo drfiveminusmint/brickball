@@ -40,9 +40,9 @@ public class SettingsMenu {
         // Create number prompt buttons for the integer match settings
         mainPage.setElement(18, createNumberPromptButton(MatchSettings.Setting.ARROWS, mainPage, "Arrows", Material.ARROW, 1));
         mainPage.setElement(19, createNumberPromptButton(MatchSettings.Setting.STEAKS, mainPage, "Steaks", Material.COOKED_BEEF, 1));
-        mainPage.setElement(20, createNumberPromptButton(MatchSettings.Setting.RESPAWN_DELAY, mainPage, "Respawn Delay (Seconds)", Material.SPAWNER, 20));
-        mainPage.setElement(21, createNumberPromptButton(MatchSettings.Setting.SHOT_CLOCK, mainPage, "Shot Clock (Seconds)", Material.TNT, 1));
-        mainPage.setElement(22, createNumberPromptButton(MatchSettings.Setting.TIMER, mainPage, "Match Time (Minutes)", Material.CLOCK, 60));
+        mainPage.setElement(20, createNumberPromptButton(MatchSettings.Setting.RESPAWN_DELAY, mainPage, "Respawn Delay (s.)", Material.SPAWNER, 20));
+        mainPage.setElement(21, createNumberPromptButton(MatchSettings.Setting.SHOT_CLOCK, mainPage, "Shot Clock (s.)", Material.TNT, 1));
+        mainPage.setElement(22, createNumberPromptButton(MatchSettings.Setting.TIMER, mainPage, "Match Time (Mins.)", Material.CLOCK, 60));
         mainPage.setElement(23, createNumberPromptButton(MatchSettings.Setting.POINTS_TO_WIN, mainPage, "Points to win", Material.GREEN_STAINED_GLASS, 1));
 
         // Create map selection page
