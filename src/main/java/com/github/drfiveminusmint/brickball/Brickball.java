@@ -301,7 +301,9 @@ public final class Brickball extends JavaPlugin {
         matchmakingUI.fillElement(null);
         // create a button for each matchmade format
         int i = 0;
-        for (BrickballFormat format : matchmakers.keySet()) {
+        // search in order
+        for (BrickballFormat format : formats) {
+            if (!format.getDoMatchmaking()) continue;
             StaticButton button = new StaticButton(format.getUnselectedDisplayItem());
             button.setOnClick(((player, clickableElement, clickType) -> {
                 startPlayerQueue(player, format);
@@ -317,7 +319,8 @@ public final class Brickball extends JavaPlugin {
         // clear any pre-existing elements
         leaderboardUI.fillElement(null);
         int i = 0;
-        for (BrickballFormat format : leaderboards.keySet()) {
+        for (BrickballFormat format : formats) {
+            if (!format.getIsRated()) continue;
             leaderboardUI.setElement(i++, new LinkButton(format.getUnselectedDisplayItem(), leaderboards.get(format).getDisplayPage()));
             // Link the leaderboard page back to the main leaderboards UI page
             leaderboards.get(format).getDisplayPage().setOnClose(((player, container, reason) -> {
