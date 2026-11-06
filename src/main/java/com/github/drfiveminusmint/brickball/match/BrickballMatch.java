@@ -116,6 +116,9 @@ public class BrickballMatch implements ForwardingAudience {
         try { // horrible
             timeHelper.runTaskTimer(Brickball.getInstance(), 0, 20);
         } catch (Exception ex) {}
+        // make sure window borders are dyed
+        setTeamColor(teamColors[0], 0);
+        setTeamColor(teamColors[1], 1);
         if (timeLimit >= 1) {
             timer = 0;
             for (Player player : players)
