@@ -10,16 +10,17 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
-public class BrickballFormat {
+public class BrickballFormat implements Comparable<BrickballFormat> {
     private final String name;
     private final boolean isRated, doMatchmaking;
-    private final int minPlayersPerTeam, maxPlayersPerTeam;
+    private final int minPlayersPerTeam, maxPlayersPerTeam, weight;
     private final MatchSettings settings;
     private final List<ArenaTemplate> validMaps;
     private final String requiredPermission;
@@ -31,6 +32,7 @@ public class BrickballFormat {
             throw new IllegalArgumentException("All Brickball formats must have 'name' defined.");
         this.minPlayersPerTeam = section.getInt("minPlayersPerTeam", 0);
         this.maxPlayersPerTeam = section.getInt("maxPlayersPerTeam", 99);
+        this.weight = section.getInt("weight", Integer.MAX_VALUE);
         this.isRated = section.getBoolean("isRated", false);
         this.doMatchmaking = section.getBoolean("doMatchmaking", false);
         // if there is no such section, this will return a clone of the default settings
@@ -80,4 +82,13 @@ public class BrickballFormat {
 
     public ItemStack getUnselectedDisplayItem() { return inactiveDisplayItem; }
     public ItemStack getSelectedDisplayItem() { return activeDisplayItem; }
+
+    @Override
+    public int compareTo(@NotNull BrickballFormat other) {
+        // compare weights first
+        if (weight != other.weight)
+            return weight-other.weight;
+        // fallback: compare names
+        return name.compareTo(other.name);
+    }
 }

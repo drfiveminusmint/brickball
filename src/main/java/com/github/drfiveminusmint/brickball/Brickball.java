@@ -270,23 +270,29 @@ public final class Brickball extends JavaPlugin {
                 File statsFile = new File(statsFolder, format.getName() + ".csv");
                 if (!statsFile.exists()) statsFile.createNewFile();
                 scheduler.submitTask(new LoadStatsTask(99, statsFile, formatStats, format));
-                // create matchmakers if necessary
-                if (format.getDoMatchmaking()) {
-                    Matchmaker matchmaker = new Matchmaker(format);
-                    // stagger our matchmakers running
-                    matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
-                    matchmakers.put(format, matchmaker);
-                }
-                // Create leaderboards for rated modes
-                if (format.getIsRated()) {
-                    Leaderboard board = new Leaderboard(format);
-                    leaderboards.put(format, board);
-                }
-                getLogger().log(Level.INFO, "Loaded format " + format.getName());
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, String.format("Error loading format file %s!", file.getName()));
                 e.printStackTrace();
             }
+        }
+
+        // Sort the formats by weight and then name
+        formats.sort(null);
+
+        for (BrickballFormat format : formats) {
+            // create matchmakers if necessary
+            if (format.getDoMatchmaking()) {
+                Matchmaker matchmaker = new Matchmaker(format);
+                // stagger our matchmakers running
+                matchmaker.runTaskTimerAsynchronously(this, 20 + numMatchmakers++, 20);
+                matchmakers.put(format, matchmaker);
+            }
+            // Create leaderboards for rated modes
+            if (format.getIsRated()) {
+                Leaderboard board = new Leaderboard(format);
+                leaderboards.put(format, board);
+            }
+            getLogger().log(Level.INFO, "Loaded format " + format.getName());
         }
     }
 

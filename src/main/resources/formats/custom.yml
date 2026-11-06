@@ -3,6 +3,8 @@ name: "custom"
 # The number of players per team
 minPlayersPerTeam: 0
 maxPlayersPerTeam: 99
+# Display weight of this format (lower weights will be displayed first in the UI)
+weight: 9999
 # Whether the format is rated
 isRated: false
 # Whether this format supports matchmaking
