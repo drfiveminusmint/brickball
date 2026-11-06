@@ -9,7 +9,7 @@ commands:
   brickball:
     aliases: [bb]
     description: brick.
-    usage: /brickball (create/join/leave/jointeam/map)
+    usage: /brickball <create/join/leave/jointeam/map>
 permissions:
   brickball.admin:
     description: Allows the user to use Brickball admin commands.
