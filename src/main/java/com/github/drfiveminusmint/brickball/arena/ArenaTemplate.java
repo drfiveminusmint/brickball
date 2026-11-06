@@ -17,7 +17,8 @@ import java.util.HashSet;
 import java.util.logging.Level;
 
 public class ArenaTemplate {
-    private final ProtectedRegion masterRegion, spawnA, doorA, spawnB, doorB;
+    private final ProtectedRegion masterRegion;
+    private final ProtectedRegion[] doors = new ProtectedRegion[2], spawns = new ProtectedRegion[2];
     private final HashSet<ProtectedRegion> deathRegions;
     private final Location brickSpawn;
     private final String ID;
@@ -26,10 +27,10 @@ public class ArenaTemplate {
     public ArenaTemplate (String id, ProtectedRegion masterRegion, ProtectedRegion doorA, ProtectedRegion spawnA, ProtectedRegion doorB, ProtectedRegion spawnB, HashSet<ProtectedRegion> deathRegions, Location brickSpawn) {
         this.ID = id;
         this.masterRegion = masterRegion;
-        this.doorA = doorA;
-        this.spawnA = spawnA;
-        this.doorB = doorB;
-        this.spawnB = spawnB;
+        this.doors[0] = doorA;
+        this.doors[1] = doorB;
+        this.spawns[0] = spawnA;
+        this.spawns[1] = spawnB;
         this.brickSpawn = brickSpawn;
         this.deathRegions = deathRegions;
     }
@@ -77,18 +78,8 @@ public class ArenaTemplate {
     public ProtectedRegion getMasterRegion() {
         return masterRegion;
     }
-    public ProtectedRegion getSpawnA() {
-        return spawnA;
-    }
-    public ProtectedRegion getDoorA() {
-        return doorA;
-    }
-    public ProtectedRegion getSpawnB() {
-        return spawnB;
-    }
-    public ProtectedRegion getDoorB() {
-        return doorB;
-    }
+    public ProtectedRegion getSpawn(int i) {return spawns[i];}
+    public ProtectedRegion getDoor(int i) {return doors[i];}
     public Location getBrickSpawn() {
         return brickSpawn;
     }

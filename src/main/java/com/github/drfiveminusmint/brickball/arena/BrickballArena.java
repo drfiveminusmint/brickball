@@ -26,13 +26,16 @@ import java.util.*;
 import java.util.logging.Level;
 
 public class BrickballArena {
-    private final ProtectedRegion masterRegion, spawnA, doorA,spawnB, doorB;
+    private final ProtectedRegion masterRegion;
+    private final ProtectedRegion[] spawnRegions = new ProtectedRegion[2];
+    private final ProtectedRegion[] doors = new ProtectedRegion[2];
     private final HashSet<ProtectedRegion> deathRegions;
     private final World gameWorld;
     private final Location[] spawnLocations = new Location[2];
     private final BrickballColor[] teamColors = {BrickballColor.RED, BrickballColor.BLUE};
     private final Location brickSpawn;
     private final String templateID;
+    private static final char[] teamLetters = {'a', 'b'};
 
     public boolean built = false;
 
@@ -41,12 +44,11 @@ public class BrickballArena {
         // Calculate offset
         BlockVector3 offset = new BlockVector3(minPoint.blockX(), minPoint.blockY(), minPoint.blockZ()).subtract(template.getMasterRegion().getMinimumPoint());
         masterRegion = WGUtils.cloneRegionBetweenWorlds(template.getMasterRegion(), String.format("master%d", matchID), gameWorld, offset);
-        spawnA = WGUtils.cloneRegionBetweenWorlds(template.getSpawnA(), String.format("spawna%d", matchID), gameWorld, offset);
-        spawnLocations[0] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnA), gameWorld);
-        doorA = WGUtils.cloneRegionBetweenWorlds(template.getDoorA(), String.format("doora%d", matchID), gameWorld, offset);
-        spawnB = WGUtils.cloneRegionBetweenWorlds(template.getSpawnB(), String.format("spawnb%d", matchID), gameWorld, offset);
-        spawnLocations[1] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnB), gameWorld);
-        doorB = WGUtils.cloneRegionBetweenWorlds(template.getDoorB(), String.format("doorb%d", matchID), gameWorld, offset);
+        for (int i = 0; i < 2; i++) {
+            spawnRegions[i] = WGUtils.cloneRegionBetweenWorlds(template.getSpawn(i), String.format("spawn%c%d", teamLetters[i], matchID), gameWorld, offset);
+            spawnLocations[i] = WGUtils.blockVectorToLocation(WGUtils.getCenterFloor(spawnRegions[i]), gameWorld);
+            doors[i] = WGUtils.cloneRegionBetweenWorlds(template.getDoor(i), String.format("door%c%d", teamLetters[i], matchID), gameWorld, offset);
+        }
         deathRegions = new HashSet<>();
         for (ProtectedRegion region : template.getDeathRegions())
             deathRegions.add(WGUtils.cloneRegionBetweenWorlds(region, String.format("%s%d", region.getId(), matchID), gameWorld, offset));
@@ -78,10 +80,10 @@ public class BrickballArena {
         Brickball.getInstance().getLogger().log(Level.INFO, "Cleaning Up");
         RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(gameWorld);
         manager.removeRegion(masterRegion.getId());
-        manager.removeRegion(spawnA.getId());
-        manager.removeRegion(doorA.getId());
-        manager.removeRegion(spawnB.getId());
-        manager.removeRegion(doorB.getId());
+        for (ProtectedRegion region : doors)
+            manager.removeRegion(region.getId());
+        for (ProtectedRegion region : spawnRegions)
+            manager.removeRegion(region.getId());
         for (ProtectedRegion region : deathRegions)
             manager.removeRegion(region.getId());
         // Prevent overwhelming the server by removing the map chunk-by-chunk
@@ -94,10 +96,9 @@ public class BrickballArena {
     public void openDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
             openSession.setSideEffectApplier(SideEffectSet.none());
-            openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
-                    BlockTypes.AIR.getDefaultState().toBaseBlock());
-            openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorB),
-                    BlockTypes.AIR.getDefaultState().toBaseBlock());
+            for (ProtectedRegion region : doors)
+                openSession.setBlocks(WorldEditRegionConverter.convertToRegion(region),
+                        BlockTypes.AIR.getDefaultState().toBaseBlock());
         } catch (WorldEditException ex) {
             Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem opening the doors for an arena (is it up to date?)");
         }
@@ -106,27 +107,40 @@ public class BrickballArena {
     // Utility function to close the doors at the start of the round
     public void closeDoors() {
         try (EditSession openSession = WorldEdit.getInstance().newEditSession(gameWorld)){
-            openSession.setSideEffectApplier(SideEffectSet.none().with(SideEffect.NEIGHBORS, SideEffect.State.ON));
-            openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorA),
-                    teamColors[0].paneType);
-            openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doorB),
-                    teamColors[1].paneType);
+            openSession.setSideEffectApplier(SideEffectSet.none()
+                    .with(SideEffect.NEIGHBORS, SideEffect.State.ON));
+            for (int i = 0; i < doors.length; i++) {
+                openSession.setBlocks(WorldEditRegionConverter.convertToRegion(doors[i]),
+                        teamColors[i].paneType);
+            }
         } catch (WorldEditException ex) {
-            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem closing the doors for an arena (is it up to date?)");
+            Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem closing the doors for an arena (is it up to date?)", ex);
         }
-        // re-dye doors to fix connection issues
-        // disgusting hack, replace this ASAP
-        setTeamColor(teamColors[0], 0);
-        setTeamColor(teamColors[1], 1);
+        for (ProtectedRegion region : doors) {
+            // update the left and right column of blocks to properly connect the doors
+            SideEffectSet fx = SideEffectSet.defaults()
+                    .with(SideEffect.NEIGHBORS, SideEffect.State.ON);
+            BlockVector3 direction;
+            if (region.getMinimumPoint().x() == region.getMaximumPoint().x())   // door is oriented north-south
+                direction = new BlockVector3(0, 0, 1);
+            else                                                                // door is oriented east-west
+                direction = new BlockVector3(1, 0, 0);
+            for (int y = region.getMinimumPoint().y(); y <= region.getMaximumPoint().y(); y++) {
+                BlockVector3 low = region.getMinimumPoint().withY(y).subtract(direction);
+                BlockVector3 high = region.getMaximumPoint().withY(y).add(direction);
+                try {
+                    gameWorld.applySideEffects(low, gameWorld.getBlock(low), fx);
+                    gameWorld.applySideEffects(high, gameWorld.getBlock(high), fx);
+                } catch (WorldEditException ex) {
+                    Brickball.getInstance().getLogger().log(Level.SEVERE, "WorldEdit encountered a problem closing the doors for an arena (is it up to date?)", ex);
+                }
+            }
+        }
     }
 
     // Check if a location is within the specified team's spawnpoint
     public boolean checkLocationInSpawn(Location location, int team) {
-        return switch (team) {
-            case 0 -> spawnA.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
-            case 1 -> spawnB.contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
-            default -> false;
-        };
+        return spawnRegions[team].contains(new BlockVector3(location.blockX(), location.blockY(), location.blockZ()));
     }
 
     // Check if a location is within one of the specified kill-regions on this map
@@ -148,15 +162,8 @@ public class BrickballArena {
 
         teamColors[i] = teamColor;
         //Dye doors
-        BlockVector3 lowCorner;
-        BlockVector3 highCorner;
-        if (i == 0) {
-            lowCorner = doorA.getMinimumPoint().add(-1,-1,-1);
-            highCorner = doorA.getMaximumPoint().add(1,1,1);
-        } else {
-            lowCorner = doorB.getMinimumPoint().add(-1,-1,-1);
-            highCorner = doorB.getMaximumPoint().add(1,1,1);
-        }
+        BlockVector3 lowCorner = doors[i].getMinimumPoint().add(-1,-1,-1);
+        BlockVector3 highCorner = doors[i].getMaximumPoint().add(1,1,1);
         try (EditSession dyeSession = WorldEdit.getInstance().newEditSession(gameWorld);){
             dyeSession.setSideEffectApplier(SideEffectSet.none().with(SideEffect.NEIGHBORS, SideEffect.State.ON));
             dyeSession.replaceBlocks(new CuboidRegion(lowCorner,highCorner), WGUtils.GLASS_ALL, teamColor.glassType);
