@@ -147,7 +147,7 @@ public class SettingsMenu {
             });
             numberInput.setElement(0, new StaticDisplay(
                     new ItemStackBuilder(material, 1)
-                    .name(Component.text(String.valueOf(lobby.getMatchSetting(key))))
+                    .name(Component.text(String.valueOf((int) lobby.getMatchSetting(key) / displayDivisor)))
                     .itemStack()));
             // set the match setting to the number the user entered
             // fractional values are supported in the input but are floored
