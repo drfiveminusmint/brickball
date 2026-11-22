@@ -17,7 +17,17 @@ public class MatchRespawnTask extends BukkitRunnable {
     public void run() {
         int timeRemaining = respawnDelay - count++;
         if (timeRemaining <= 0) {
-            match.respawnPlayer(player);
+            // clear action bar
+            player.sendActionBar(Component.text(""));
+            // respawn player
+            if (match.getState() == MatchState.PAUSED)
+                return;
+            player.setGameMode(GameMode.ADVENTURE);
+            player.teleport(player.getRespawnLocation());
+            player.heal(20);
+            player.setFoodLevel(20);
+            player.setSaturation(match.getSettings().getInt(MatchSettings.Setting.SATURATION));
+            player.setFireTicks(0);
             this.cancel();
         } else {
             // every second

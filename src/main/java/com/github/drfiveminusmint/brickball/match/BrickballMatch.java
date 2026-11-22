@@ -272,25 +272,15 @@ public class BrickballMatch implements ForwardingAudience {
     }
 
     public void setPlayerRespawning(Player player) {
-        if (settings.getInt(MatchSettings.Setting.RESPAWN_DELAY) == 0) {
-            respawnPlayer(player);
-            return;
-        }
-        player.setGameMode(GameMode.SPECTATOR);
+        if (settings.getInt(MatchSettings.Setting.RESPAWN_DELAY) >= 0)
+            player.setGameMode(GameMode.SPECTATOR);
         MatchRespawnTask task = new MatchRespawnTask(player, this);
         task.runTaskTimer(Brickball.getInstance(), 0, 1);
         respawnTasks.add(task);
     }
 
     void respawnPlayer(Player player) {
-        if (state == MatchState.PAUSED || player.getGameMode() == GameMode.ADVENTURE)
-            return;
-        player.setGameMode(GameMode.ADVENTURE);
-        player.teleport(player.getRespawnLocation());
-        player.heal(20);
-        player.setFoodLevel(20);
-        player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
-        player.setFireTicks(0);
+
     }
 
     public void spawnBrick() {
