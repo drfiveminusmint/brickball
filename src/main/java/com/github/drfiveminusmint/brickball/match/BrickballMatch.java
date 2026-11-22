@@ -283,7 +283,7 @@ public class BrickballMatch implements ForwardingAudience {
         players.add(player);
         player.setScoreboard(scoreboard);
         // If it's already in progress, they need to be put into spectator mode.
-        if (state == MatchState.RUNNING) {
+        if (state == MatchState.RUNNING || state == MatchState.ROUND_STARTING) {
             player.teleport(arena.getBrickSpawn());
             // ensure correct order of operations
             Bukkit.getScheduler().runTaskLater(Brickball.getInstance(), () -> player.setGameMode(GameMode.SPECTATOR), 1);
@@ -301,6 +301,7 @@ public class BrickballMatch implements ForwardingAudience {
             leavers.add(player);
         for (Team team : teams)
             team.removePlayer(player);
+        players.remove(player);
         // Don't take the brick with you when leaving
         player.closeInventory();
         if (player.getInventory().contains(Material.BRICK) || player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
