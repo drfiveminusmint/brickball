@@ -94,23 +94,8 @@ public class PlayerListener implements Listener {
             return;
         }
         if (player.getRespawnLocation() == null) Brickball.getInstance().getLogger().log(Level.SEVERE, "UH OH");
-        if (playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY) != 0) {
-            player.setGameMode(GameMode.SPECTATOR);
-            respawnActionBar(player, playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
-        }
         if (playerMatch.getSettings().getBoolean(MatchSettings.Setting.RESPAWNING)) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (playerMatch.getState().equals(MatchState.PAUSED)) return;
-                    player.setGameMode(GameMode.ADVENTURE);
-                    player.teleport(player.getRespawnLocation());
-                    player.heal(20);
-                    player.setFoodLevel(20);
-                    player.setSaturation(playerMatch.getSettings().getInt(MatchSettings.Setting.SATURATION));
-                    player.setFireTicks(0);
-                }
-            }.runTaskLater(Brickball.getInstance(), playerMatch.getSettings().getInt(MatchSettings.Setting.RESPAWN_DELAY));
+            playerMatch.setPlayerRespawning(player);
         } else {
             player.setGameMode(GameMode.SPECTATOR);
             // don't softlock if all players are dead
@@ -125,17 +110,6 @@ public class PlayerListener implements Listener {
         }
     }
 
-    public void respawnActionBar(Player player, int maxDelay) {
-        for (int count = maxDelay/20;  count >= 0; count -= 1) {
-            int finalCount = count;
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    player.sendActionBar(Component.text("Respawning in: ", NamedTextColor.RED).append(Component.text(finalCount, NamedTextColor.YELLOW)));
-                }
-            }.runTaskLater(Brickball.getInstance(), (maxDelay - (count * 20L)));
-        }
-    }
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         BrickballMatch playerMatch = Brickball.getInstance().getMatchManager().getMatchByPlayer(event.getPlayer());

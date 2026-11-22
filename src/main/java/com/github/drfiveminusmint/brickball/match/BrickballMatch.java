@@ -69,6 +69,7 @@ public class BrickballMatch implements ForwardingAudience {
     private Lobby returningLobby = null;
     private MatchSettings settings = MatchSettings.cloneDefault();
     private TimerUpdateHelper timeHelper = new TimerUpdateHelper(this);
+    private HashSet<MatchRespawnTask> respawnTasks = new HashSet<>();
 
     private final Map<Player, Counter> kills = new HashMap<>(), deaths = new HashMap<>(), scores = new HashMap<>();
 
@@ -158,6 +159,9 @@ public class BrickballMatch implements ForwardingAudience {
         shotClockMax = settings.getInt(MatchSettings.Setting.SHOT_CLOCK);
         shotClockBar.setVisible(false);
         state = MatchState.ROUND_STARTING;
+        for (MatchRespawnTask task : respawnTasks)
+            task.cancel();
+        respawnTasks.clear();
         for (int i = 0; i <= 1; i++)
             for (String string : teams[i].getEntries()) {
                 Player player = Bukkit.getServer().getPlayer(string);
@@ -265,6 +269,28 @@ public class BrickballMatch implements ForwardingAudience {
         if (arena.checkLocationInDeathRegion(player.getLocation()) || !arena.checkLocationInbounds(player.getLocation())) {
             player.damage(999, DamageSource.builder(DamageType.OUT_OF_WORLD).build());
         }
+    }
+
+    public void setPlayerRespawning(Player player) {
+        if (settings.getInt(MatchSettings.Setting.RESPAWN_DELAY) == 0) {
+            respawnPlayer(player);
+            return;
+        }
+        player.setGameMode(GameMode.SPECTATOR);
+        MatchRespawnTask task = new MatchRespawnTask(player, this);
+        task.runTaskTimer(Brickball.getInstance(), 0, 1);
+        respawnTasks.add(task);
+    }
+
+    void respawnPlayer(Player player) {
+        if (state == MatchState.PAUSED || player.getGameMode() == GameMode.ADVENTURE)
+            return;
+        player.setGameMode(GameMode.ADVENTURE);
+        player.teleport(player.getRespawnLocation());
+        player.heal(20);
+        player.setFoodLevel(20);
+        player.setSaturation(settings.getInt(MatchSettings.Setting.SATURATION));
+        player.setFireTicks(0);
     }
 
     public void spawnBrick() {
@@ -650,6 +676,9 @@ public class BrickballMatch implements ForwardingAudience {
             if (player.getInventory().getItemInOffHand().getType().equals(Material.BRICK))
                 player.getInventory().setItemInOffHand(null);
         }
+        for (MatchRespawnTask task : respawnTasks)
+            task.cancel();
+        respawnTasks.clear();
         return true;
     }
 
