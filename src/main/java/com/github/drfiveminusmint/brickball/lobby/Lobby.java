@@ -235,7 +235,10 @@ public class Lobby implements ForwardingAudience {
         activeMatch = null;
         // boot players back to queue if this format is matchmade
         if (format.getDoMatchmaking()) {
-            final Set<Player> cachedPlayers = new HashSet<>(readyPlayers.keySet());
+            final Set<Player> cachedPlayers = new HashSet<>();
+            for (int i = 0; i < lobbyTeams.length-1; i++) // don't send spectators to queue
+                for (String entry : lobbyTeams[i].getEntries())
+                    cachedPlayers.add(Bukkit.getPlayer(entry));
             Bukkit.getScheduler().runTask(Brickball.getInstance(), () -> {
                for (Player player : cachedPlayers)
                    Brickball.getInstance().startPlayerQueue(player, format);
